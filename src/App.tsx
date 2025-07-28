@@ -1,38 +1,34 @@
-import { useState } from 'react'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
+import Layout from './components/Layout'
+import Home from './pages/Home'
+import ViewBooks from './pages/ViewBooks'
+import ViewCategories from './pages/ViewCategories'
+import ViewFolders from './pages/ViewFolders'
+import AddBook from './pages/AddBook'
+import AddCategory from './pages/AddCategory'
+import './styles/themes.css'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>eBook Manager</h1>
-        <p>
-          A desktop application for managing your eBook collection
-        </p>
-        
-        <div className="card">
-          <button onClick={() => setCount((count) => count + 1)}>
-            count is {count}
-          </button>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test HMR
-          </p>
+    <ThemeProvider>
+      <Router>
+        <div className="App">
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/books" element={<ViewBooks />} />
+              <Route path="/categories" element={<ViewCategories />} />
+              <Route path="/folders" element={<ViewFolders />} />
+              <Route path="/add-book" element={<AddBook />} />
+              <Route path="/add-category" element={<AddCategory />} />
+            </Routes>
+          </Layout>
         </div>
-
-        <div className="features">
-          <h2>Features Coming Soon:</h2>
-          <ul>
-            <li>📚 Import and organize eBooks</li>
-            <li>🔍 Search and filter your collection</li>
-            <li>📖 Built-in eBook reader</li>
-            <li>🏷️ Tag and categorize books</li>
-            <li>📊 Reading progress tracking</li>
-          </ul>
-        </div>
-      </header>
-    </div>
+      </Router>
+    </ThemeProvider>
   )
 }
 
