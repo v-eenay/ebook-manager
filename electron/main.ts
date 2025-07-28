@@ -30,7 +30,7 @@ if (!app.requestSingleInstanceLock()) {
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 let win: BrowserWindow | null = null
-const preload = path.join(__dirname, '../dist-electron/preload.js')
+const preload = path.join(__dirname, './preload.js')
 const url = process.env.VITE_DEV_SERVER_URL
 const indexHtml = path.join(process.env.DIST || '', 'index.html')
 
@@ -44,11 +44,9 @@ async function createWindow() {
     minHeight: 600,
     webPreferences: {
       preload,
-      // Warning: Enabling nodeIntegration and disabling contextIsolation is not secure in production
-      // Consider using contextBridge.exposeInMainWorld
-      // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
-      nodeIntegration: true,
-      contextIsolation: false,
+      // Security: Enable context isolation and disable node integration
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   })
 
@@ -101,8 +99,8 @@ ipcMain.handle('open-win', (_, arg) => {
   const childWindow = new BrowserWindow({
     webPreferences: {
       preload,
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   })
 
