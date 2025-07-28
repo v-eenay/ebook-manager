@@ -4,6 +4,8 @@
   "description": "A desktop eBook manager built with Electron, Vite, and React",
   "main": "dist-electron/main.js",
   "private": true,
+  "license": "MIT",
+  "author": "v-eenay",
   "scripts": {
     "dev": "vite",
     "build": "vite build && electron-builder",
