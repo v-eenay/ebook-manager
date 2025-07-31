@@ -12,6 +12,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/driver/desktop"
 
 	"ebookreader/reader"
 )
@@ -21,23 +23,24 @@ type ModernApplication struct {
 	App       fyne.App
 	Window    fyne.Window
 	docManager *reader.DocumentManager
-	
+
 	// UI components
 	currentPage   int
 	contentStack  *container.AppTabs
-	
-	// PDF display
+
+	// Document display
 	pdfImage      *canvas.Image
 	pdfContainer  *container.Scroll
-	
+	enhancedViewer *EnhancedImageViewer
+
 	// Text display
 	textEdit      *widget.RichText
 	textContainer *container.Scroll
-	
+
 	// Controls
 	pageLabel     *widget.Label
 	toolbar       *fyne.Container
-	
+
 	// Navigation
 	prevButton    *widget.Button
 	nextButton    *widget.Button
@@ -45,10 +48,25 @@ type ModernApplication struct {
 	lastButton    *widget.Button
 	openButton    *widget.Button
 	pageEntry     *widget.Entry
-	
+
+	// Zoom and view controls
+	zoomInButton    *widget.Button
+	zoomOutButton   *widget.Button
+	fitPageButton   *widget.Button
+	fitWidthButton  *widget.Button
+	zoomLabel       *widget.Label
+	helpButton      *widget.Button
+
+	// Zoom state
+	zoomLevel       float64
+	fitMode         string // "page", "width", "custom"
+
 	// Status
-	statusBar     *fyne.Container
-	documentInfo  *widget.Label
+	statusBar       *fyne.Container
+	documentInfo    *widget.Label
+
+	// Keyboard shortcuts
+	shortcuts       map[string]func()
 }
 
 // NewModernApplication creates a new modern application instance
@@ -56,7 +74,7 @@ func NewModernApplication() *ModernApplication {
 	myApp := app.NewWithID("com.ebookreader.modern")
 
 	window := myApp.NewWindow("Modern EBook Reader")
-	window.Resize(fyne.NewSize(1200, 800))
+	window.Resize(fyne.NewSize(1400, 900))
 	window.CenterOnScreen()
 
 	application := &ModernApplication{
@@ -64,10 +82,14 @@ func NewModernApplication() *ModernApplication {
 		Window:      window,
 		docManager:  reader.NewDocumentManager(),
 		currentPage: 1,
+		zoomLevel:   1.0,
+		fitMode:     "page",
+		shortcuts:   make(map[string]func()),
 	}
 
 	application.setupUI()
 	application.setupTheme()
+	application.setupKeyboardShortcuts()
 	return application
 }
 
@@ -75,20 +97,21 @@ func NewModernApplication() *ModernApplication {
 func (ma *ModernApplication) setupUI() {
 	// Create main toolbar
 	ma.createToolbar()
-	
+
 	// Create content area with tabs
 	ma.contentStack = container.NewAppTabs()
-	
-	// Create PDF view
-	ma.createPDFView()
-	
-	// Create text view  
+	ma.contentStack.SetTabLocation(container.TabLocationTop)
+
+	// Create document reader view
+	ma.createReaderView()
+
+	// Create text view
 	ma.createTextView()
-	
+
 	// Create status bar
 	ma.createStatusBar()
-	
-	// Create main layout
+
+	// Create main layout with improved spacing
 	content := container.NewBorder(
 		ma.toolbar,    // top
 		ma.statusBar,  // bottom
@@ -96,52 +119,62 @@ func (ma *ModernApplication) setupUI() {
 		nil,          // right
 		ma.contentStack, // center
 	)
-	
+
 	ma.Window.SetContent(content)
-	
+
 	// Show welcome
 	ma.showWelcomeScreen()
-	
+
 	// Enable drag and drop
 	ma.Window.SetOnDropped(ma.handleFileDrop)
+
+	// Setup mouse wheel handling
+	ma.setupMouseHandling()
 }
 
 // setupTheme applies modern theming
 func (ma *ModernApplication) setupTheme() {
-	// Set a modern app theme if available
-	// Fyne handles theming automatically
+	// Set a modern app theme
+	ma.App.Settings().SetTheme(theme.DefaultTheme())
 }
 
 // createToolbar creates the modern toolbar
 func (ma *ModernApplication) createToolbar() {
 	// File operations
-	ma.openButton = widget.NewButtonWithIcon("Open", nil, ma.openDocument)
+	ma.openButton = widget.NewButtonWithIcon("Open Document", theme.FolderOpenIcon(), ma.openDocument)
 	ma.openButton.Importance = widget.HighImportance
-	
-	// Navigation buttons
-	ma.firstButton = widget.NewButtonWithIcon("", nil, ma.goToFirstPage)
-	ma.firstButton.SetText("⏮")
-	
-	ma.prevButton = widget.NewButtonWithIcon("", nil, ma.goToPreviousPage)
-	ma.prevButton.SetText("◀")
-	
-	ma.nextButton = widget.NewButtonWithIcon("", nil, ma.goToNextPage)
-	ma.nextButton.SetText("▶")
-	
-	ma.lastButton = widget.NewButtonWithIcon("", nil, ma.goToLastPage)
-	ma.lastButton.SetText("⏭")
-	
-	// Page entry
+
+	// Navigation buttons with modern icons
+	ma.firstButton = widget.NewButtonWithIcon("First", theme.MediaSkipPreviousIcon(), ma.goToFirstPage)
+	ma.prevButton = widget.NewButtonWithIcon("Prev", theme.NavigateBackIcon(), ma.goToPreviousPage)
+	ma.nextButton = widget.NewButtonWithIcon("Next", theme.NavigateNextIcon(), ma.goToNextPage)
+	ma.lastButton = widget.NewButtonWithIcon("Last", theme.MediaSkipNextIcon(), ma.goToLastPage)
+
+	// Page entry with improved styling
 	ma.pageEntry = widget.NewEntry()
 	ma.pageEntry.SetText("1")
-	ma.pageEntry.Resize(fyne.NewSize(60, 30))
+	ma.pageEntry.Resize(fyne.NewSize(70, 32))
 	ma.pageEntry.OnSubmitted = func(text string) {
 		ma.goToPageFromEntry()
 	}
-	
 	ma.pageLabel = widget.NewLabel("of 0")
-	
-	// Arrange toolbar
+
+	// Zoom controls
+	ma.zoomInButton = widget.NewButtonWithIcon("Zoom In", theme.ZoomInIcon(), ma.zoomIn)
+	ma.zoomOutButton = widget.NewButtonWithIcon("Zoom Out", theme.ZoomOutIcon(), ma.zoomOut)
+	ma.fitPageButton = widget.NewButton("Fit Page", ma.fitToPage)
+	ma.fitWidthButton = widget.NewButton("Fit Width", ma.fitToWidth)
+	ma.zoomLabel = widget.NewLabel("100%")
+
+	// Help button with quick help option
+	ma.helpButton = widget.NewButtonWithIcon("Help (F1)", theme.HelpIcon(), ma.showHelp)
+
+	// Add a quick help button for essential shortcuts
+	quickHelpButton := widget.NewButtonWithIcon("Quick Help", theme.InfoIcon(), ma.showQuickHelp)
+
+	// Arrange toolbar sections
+	fileSection := container.NewHBox(ma.openButton)
+
 	navSection := container.NewHBox(
 		ma.firstButton,
 		ma.prevButton,
@@ -151,48 +184,101 @@ func (ma *ModernApplication) createToolbar() {
 		ma.nextButton,
 		ma.lastButton,
 	)
-	
-	ma.toolbar = container.NewVBox(
-		container.NewHBox(ma.openButton, widget.NewSeparator(), navSection),
+
+	zoomSection := container.NewHBox(
+		ma.zoomOutButton,
+		ma.zoomInButton,
+		ma.zoomLabel,
+		widget.NewSeparator(),
+		ma.fitPageButton,
+		ma.fitWidthButton,
 	)
-	
-	// Initially disable navigation
+
+	helpSection := container.NewHBox(quickHelpButton, ma.helpButton)
+
+	// Create main toolbar with sections
+	ma.toolbar = container.NewVBox(
+		container.NewBorder(
+			nil, nil,
+			fileSection,
+			helpSection,
+			container.NewHBox(
+				widget.NewSeparator(),
+				navSection,
+				widget.NewSeparator(),
+				zoomSection,
+			),
+		),
+	)
+
+	// Initially disable navigation and zoom
 	ma.setNavigationEnabled(false)
+	ma.setZoomEnabled(false)
 }
 
-// createPDFView creates the PDF viewing area
-func (ma *ModernApplication) createPDFView() {
-	// Create image container for PDF
-	ma.pdfContainer = container.NewScroll(widget.NewCard("PDF Viewer", "PDF content will appear here", nil))
-	
-	// Add to tabs
-	pdfTab := container.NewTabItem("📄 PDF", ma.pdfContainer)
-	ma.contentStack.Append(pdfTab)
+// createReaderView creates the document reading area (renamed from createPDFView)
+func (ma *ModernApplication) createReaderView() {
+	// Create enhanced viewer for better mouse interaction
+	ma.enhancedViewer = NewEnhancedImageViewer()
+
+	// Set up callbacks for enhanced interactions
+	ma.enhancedViewer.SetOnZoomChange(func(delta float64) {
+		if delta == 0 {
+			// Toggle zoom (double-click)
+			if ma.fitMode == "page" {
+				ma.setZoom(1.0)
+			} else {
+				ma.fitToPage()
+			}
+		} else {
+			// Zoom with mouse wheel
+			newZoom := ma.zoomLevel + delta
+			ma.setZoom(newZoom)
+		}
+	})
+
+	ma.enhancedViewer.SetOnPageChange(func(delta int) {
+		if delta > 0 {
+			ma.goToNextPage()
+		} else {
+			ma.goToPreviousPage()
+		}
+	})
+
+	// Get the scroll container from enhanced viewer
+	ma.pdfContainer = ma.enhancedViewer.GetScrollContainer()
+
+	// Add to tabs with generic name
+	readerTab := container.NewTabItem("📖 Reader", ma.enhancedViewer)
+	ma.contentStack.Append(readerTab)
 }
 
 // createTextView creates the text viewing area
 func (ma *ModernApplication) createTextView() {
-	// Create rich text widget
+	// Create rich text widget with improved styling
 	ma.textEdit = widget.NewRichTextFromMarkdown("")
 	ma.textEdit.Wrapping = fyne.TextWrapWord
-	
+
 	ma.textContainer = container.NewScroll(ma.textEdit)
-	
-	// Add to tabs
-	textTab := container.NewTabItem("📖 Text", ma.textContainer)
+
+	// Add to tabs with updated name
+	textTab := container.NewTabItem("📄 Text View", ma.textContainer)
 	ma.contentStack.Append(textTab)
 }
 
 // createStatusBar creates the status bar
 func (ma *ModernApplication) createStatusBar() {
-	ma.documentInfo = widget.NewLabel("Ready")
-	
+	ma.documentInfo = widget.NewLabel("Ready - Press F1 for help")
+
 	progressInfo := widget.NewLabel("")
-	
+	zoomInfo := widget.NewLabel("Zoom: 100%")
+
 	ma.statusBar = container.NewHBox(
 		ma.documentInfo,
 		widget.NewSeparator(),
 		progressInfo,
+		widget.NewSeparator(),
+		zoomInfo,
 	)
 }
 
@@ -201,37 +287,48 @@ func (ma *ModernApplication) showWelcomeScreen() {
 	welcomeContent := `
 # 📚 Modern EBook Reader
 
-Welcome to the Modern EBook Reader - a cross-platform application for reading digital books.
+Welcome to the Modern EBook Reader - a cross-platform application for reading digital books with modern features and intuitive controls.
 
-## ✨ Features
+## ✨ New Features
 
+- **Enhanced Navigation**: Mouse wheel scrolling and keyboard shortcuts
+- **Zoom Controls**: Zoom in/out with mouse wheel (Ctrl+wheel) or toolbar buttons
+- **Fit Options**: Fit to page or width for optimal viewing
+- **Modern Interface**: Clean, intuitive design with improved visual hierarchy
 - **Multi-format Support**: PDF, EPUB, and MOBI files
-- **Modern Interface**: Clean, intuitive design with tabbed viewing
-- **Easy Navigation**: Page-by-page or continuous scrolling
 - **Drag & Drop**: Simply drag files into the window
-- **Offline Reading**: No internet connection required
+- **Comprehensive Help**: Press F1 for complete keyboard shortcuts guide
 
 ## 🚀 Getting Started
 
-1. **Open a Document**: Click the "Open" button or drag a file into this window
-2. **Navigate**: Use the navigation buttons or type a page number
-3. **Read**: Content adapts automatically to the format
+1. **Open a Document**: Click "Open Document" or drag a file into this window
+2. **Navigate**: Use arrow keys, mouse wheel, or navigation buttons
+3. **Zoom**: Use Ctrl+mouse wheel or zoom buttons for perfect viewing
+4. **Get Help**: Press F1 to see all available shortcuts and features
 
 ## 📋 Supported Formats
 
-- **📄 PDF** - High-quality page rendering
-- **📖 EPUB** - Reflowable text with proper formatting  
+- **📖 PDF** - High-quality page rendering with zoom support
+- **📄 EPUB** - Reflowable text with proper formatting
 - **📱 MOBI** - Kindle-compatible ebook format
+
+## 🎯 Quick Tips
+
+- **F1** - Show help and keyboard shortcuts
+- **Ctrl+O** - Open document
+- **Arrow keys** - Navigate pages
+- **Ctrl +/-** - Zoom in/out
+- **Ctrl+1/2** - Fit to page/width
 
 ---
 
-*Drag and drop a file to begin reading!*
+*Drag and drop a file to begin reading, or press F1 for complete help!*
 `
 
 	ma.textEdit.ParseMarkdown(welcomeContent)
 	// Update tab text
 	if len(ma.contentStack.Items) > 1 {
-		ma.contentStack.Items[1].Text = "📖 Welcome"
+		ma.contentStack.Items[1].Text = "📄 Welcome"
 		ma.contentStack.SelectTab(ma.contentStack.Items[1])
 	}
 }
@@ -302,7 +399,7 @@ func (ma *ModernApplication) switchToDocumentView(docType reader.DocumentType) {
 	switch docType {
 	case reader.TypePDF:
 		if len(ma.contentStack.Items) > 0 {
-			ma.contentStack.Items[0].Text = "📄 PDF"
+			ma.contentStack.Items[0].Text = "📖 Reader (PDF)"
 			ma.contentStack.SelectTab(ma.contentStack.Items[0])
 		}
 	case reader.TypeEPUB, reader.TypeMOBI:
@@ -311,7 +408,7 @@ func (ma *ModernApplication) switchToDocumentView(docType reader.DocumentType) {
 			formatName = "MOBI"
 		}
 		if len(ma.contentStack.Items) > 1 {
-			ma.contentStack.Items[1].Text = fmt.Sprintf("📖 %s", formatName)
+			ma.contentStack.Items[1].Text = fmt.Sprintf("📄 Text View (%s)", formatName)
 			ma.contentStack.SelectTab(ma.contentStack.Items[1])
 		}
 	}
@@ -342,17 +439,53 @@ func (ma *ModernApplication) displayCurrentPage() {
 	}
 }
 
-// displayPDFPage displays a PDF page
+// displayPDFPage displays a PDF page with zoom support
 func (ma *ModernApplication) displayPDFPage(img image.Image) {
 	if ma.pdfImage == nil {
 		ma.pdfImage = canvas.NewImageFromImage(img)
-		ma.pdfImage.FillMode = canvas.ImageFillContain
-		ma.pdfContainer.Content = ma.pdfImage
 	} else {
 		ma.pdfImage.Image = img
 		ma.pdfImage.Refresh()
 	}
-	ma.pdfContainer.Refresh()
+
+	// Apply zoom and fit mode
+	ma.applyImageZoom()
+
+	// Update the enhanced viewer
+	ma.enhancedViewer.SetImage(ma.pdfImage)
+}
+
+// applyImageZoom applies the current zoom level and fit mode to the image
+func (ma *ModernApplication) applyImageZoom() {
+	if ma.pdfImage == nil {
+		return
+	}
+
+	switch ma.fitMode {
+	case "page":
+		ma.pdfImage.FillMode = canvas.ImageFillContain
+		ma.pdfImage.Resize(ma.pdfContainer.Size())
+	case "width":
+		ma.pdfImage.FillMode = canvas.ImageFillOriginal
+		// Calculate size to fit width
+		containerSize := ma.pdfContainer.Size()
+		if containerSize.Width > 0 {
+			ma.pdfImage.Resize(fyne.NewSize(containerSize.Width, 0))
+		}
+	case "custom":
+		ma.pdfImage.FillMode = canvas.ImageFillOriginal
+		// Apply custom zoom
+		if ma.pdfImage.Image != nil {
+			bounds := ma.pdfImage.Image.Bounds()
+			originalWidth := float32(bounds.Dx())
+			originalHeight := float32(bounds.Dy())
+
+			newWidth := originalWidth * float32(ma.zoomLevel)
+			newHeight := originalHeight * float32(ma.zoomLevel)
+
+			ma.pdfImage.Resize(fyne.NewSize(newWidth, newHeight))
+		}
+	}
 }
 
 // displayTextPage displays a text page
@@ -427,7 +560,8 @@ func (ma *ModernApplication) updateUI() {
 	
 	if doc == nil {
 		ma.setNavigationEnabled(false)
-		ma.documentInfo.SetText("Ready")
+		ma.setZoomEnabled(false)
+		ma.documentInfo.SetText("Ready - Press F1 for help")
 		ma.pageLabel.SetText("of 0")
 		ma.pageEntry.SetText("1")
 		return
@@ -447,20 +581,24 @@ func (ma *ModernApplication) updateUI() {
 	
 	// Update navigation buttons
 	ma.setNavigationEnabled(true)
+	ma.setZoomEnabled(true)
 	ma.firstButton.Enable()
 	ma.prevButton.Enable()
 	ma.nextButton.Enable()
 	ma.lastButton.Enable()
-	
+
 	if ma.currentPage <= 1 {
 		ma.firstButton.Disable()
 		ma.prevButton.Disable()
 	}
-	
+
 	if ma.currentPage >= pageCount {
 		ma.nextButton.Disable()
 		ma.lastButton.Disable()
 	}
+
+	// Update zoom display
+	ma.updateZoomDisplay()
 }
 
 // setNavigationEnabled enables or disables navigation controls
@@ -480,9 +618,134 @@ func (ma *ModernApplication) setNavigationEnabled(enabled bool) {
 	}
 }
 
+// setupKeyboardShortcuts configures keyboard shortcuts
+func (ma *ModernApplication) setupKeyboardShortcuts() {
+	ma.shortcuts = map[string]func(){
+		"F1":           ma.showHelp,
+		"Ctrl+O":       ma.openDocument,
+		"Left":         ma.goToPreviousPage,
+		"Right":        ma.goToNextPage,
+		"Home":         ma.goToFirstPage,
+		"End":          ma.goToLastPage,
+		"Page_Up":      ma.goToPreviousPage,
+		"Page_Down":    ma.goToNextPage,
+		"Ctrl+Plus":    ma.zoomIn,
+		"Ctrl+Minus":   ma.zoomOut,
+		"Ctrl+0":       func() { ma.setZoom(1.0) },
+		"Ctrl+1":       ma.fitToPage,
+		"Ctrl+2":       ma.fitToWidth,
+	}
+
+	// Set up actual Fyne keyboard shortcuts
+	canvas := ma.Window.Canvas()
+
+	// File operations
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyF1,
+	}, func(shortcut fyne.Shortcut) {
+		ma.showHelp()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyO,
+		Modifier: fyne.KeyModifierControl,
+	}, func(shortcut fyne.Shortcut) {
+		ma.openDocument()
+	})
+
+	// Navigation shortcuts
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyLeft,
+	}, func(shortcut fyne.Shortcut) {
+		ma.goToPreviousPage()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyRight,
+	}, func(shortcut fyne.Shortcut) {
+		ma.goToNextPage()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyHome,
+	}, func(shortcut fyne.Shortcut) {
+		ma.goToFirstPage()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyEnd,
+	}, func(shortcut fyne.Shortcut) {
+		ma.goToLastPage()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyPageUp,
+	}, func(shortcut fyne.Shortcut) {
+		ma.goToPreviousPage()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyPageDown,
+	}, func(shortcut fyne.Shortcut) {
+		ma.goToNextPage()
+	})
+
+	// Zoom shortcuts
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyEqual, // Plus key
+		Modifier: fyne.KeyModifierControl,
+	}, func(shortcut fyne.Shortcut) {
+		ma.zoomIn()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyMinus,
+		Modifier: fyne.KeyModifierControl,
+	}, func(shortcut fyne.Shortcut) {
+		ma.zoomOut()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.Key0,
+		Modifier: fyne.KeyModifierControl,
+	}, func(shortcut fyne.Shortcut) {
+		ma.setZoom(1.0)
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.Key1,
+		Modifier: fyne.KeyModifierControl,
+	}, func(shortcut fyne.Shortcut) {
+		ma.fitToPage()
+	})
+
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.Key2,
+		Modifier: fyne.KeyModifierControl,
+	}, func(shortcut fyne.Shortcut) {
+		ma.fitToWidth()
+	})
+}
+
+// setupMouseHandling configures mouse interactions
+func (ma *ModernApplication) setupMouseHandling() {
+	// Fyne provides automatic mouse wheel scrolling for scroll containers
+	// The pdfContainer and textContainer automatically support:
+	// - Mouse wheel scrolling (vertical)
+	// - Shift+wheel for horizontal scrolling
+	// - Touch/trackpad gestures on supported platforms
+
+	// For enhanced zoom with Ctrl+wheel, we would need to implement
+	// custom mouse event handling, which requires more advanced Fyne usage
+	// The current implementation provides zoom via toolbar buttons and keyboard shortcuts
+
+	// Pan/drag functionality is automatically provided by Fyne's scroll container
+	// when content is larger than the container (e.g., when zoomed in)
+}
+
 // showError displays an error message
 func (ma *ModernApplication) showError(title, message string) {
-	dialog.ShowError(fmt.Errorf(message), ma.Window)
+	dialog.ShowError(fmt.Errorf("%s", message), ma.Window)
 }
 
 // handleFileDrop handles drag and drop of files
@@ -503,6 +766,233 @@ func (ma *ModernApplication) handleFileDrop(position fyne.Position, uris []fyne.
 
 	// Load the document
 	ma.loadDocument(filename)
+}
+
+// showHelp displays the help dialog with keyboard shortcuts
+func (ma *ModernApplication) showHelp() {
+	helpContent := `# 📚 Modern EBook Reader - Complete Guide
+
+## 🎯 Keyboard Shortcuts
+
+### File Operations
+- **Ctrl+O** - Open document dialog
+- **F1** - Show this help guide
+
+### Page Navigation
+- **← (Left Arrow)** - Previous page
+- **→ (Right Arrow)** - Next page
+- **Page Up** - Previous page
+- **Page Down** - Next page
+- **Home** - Jump to first page
+- **End** - Jump to last page
+
+### Zoom & View Controls
+- **Ctrl + +** - Zoom in (increase magnification)
+- **Ctrl + -** - Zoom out (decrease magnification)
+- **Ctrl + 0** - Reset zoom to 100%
+- **Ctrl + 1** - Fit document to page
+- **Ctrl + 2** - Fit document to width
+
+## 🖱️ Mouse & Touch Controls
+
+### Navigation
+- **Mouse wheel** - Scroll through document content
+- **Shift + Mouse wheel** - Horizontal scrolling
+- **Ctrl + Mouse wheel** - Zoom in/out (when available)
+
+### Document Interaction
+- **Click and drag** - Pan around zoomed documents
+- **Double-click** - Toggle between fit modes
+- **Drag & drop files** - Open documents by dropping them into the window
+
+## 🎛️ Toolbar Guide
+
+### File Section
+- **Open Document** - Browse and select files (PDF, EPUB, MOBI)
+
+### Navigation Section
+- **First/Last** - Jump to document boundaries
+- **Prev/Next** - Navigate page by page
+- **Page Entry** - Type page number and press Enter to jump
+
+### Zoom Section
+- **Zoom In/Out** - Adjust magnification level
+- **Fit Page** - Scale to fit entire page in view
+- **Fit Width** - Scale to fit page width
+- **Zoom %** - Current zoom level indicator
+
+### Help Section
+- **Help (F1)** - Open this help guide
+
+## 📄 Supported File Formats
+
+### PDF Documents
+- High-quality page rendering
+- Maintains original formatting and layout
+- Supports zoom and navigation
+
+### EPUB eBooks
+- Reflowable text with proper formatting
+- Adapts to different screen sizes
+- Supports rich text and images
+
+### MOBI eBooks
+- Kindle-compatible format
+- Optimized for reading devices
+- Supports text formatting
+
+## 💡 Pro Tips & Features
+
+### Quick Access
+- **Drag & Drop**: Simply drag files into the window to open them
+- **Page Jumping**: Use the page entry field for quick navigation
+- **Tab Switching**: Use Reader tab for images, Text View for reflowable content
+
+### Status Information
+- **Document Info**: Shows title and author in status bar
+- **Zoom Level**: Current magnification and fit mode
+- **Page Progress**: Current page of total pages
+
+### Modern Interface
+- **Clean Design**: Minimalist interface focuses on content
+- **Responsive Layout**: Adapts to different window sizes
+- **Intuitive Controls**: Standard shortcuts and familiar icons
+
+## 🔧 Troubleshooting
+
+### Common Issues
+- **File won't open**: Ensure it's a supported format (PDF, EPUB, MOBI)
+- **Zoom too small/large**: Use Ctrl+0 to reset or fit buttons
+- **Navigation not working**: Make sure a document is loaded
+
+### Performance Tips
+- **Large PDFs**: Use fit modes for better performance
+- **Memory usage**: Close and reopen for very large documents
+- **Smooth scrolling**: Use mouse wheel for best experience
+
+---
+
+**Need more help?** This guide covers all available features. For additional support, check the application documentation or contact support.
+
+*Press Escape, click Close, or click outside this dialog to return to reading.*`
+
+	// Create help dialog with improved styling
+	helpText := widget.NewRichTextFromMarkdown(helpContent)
+	helpText.Wrapping = fyne.TextWrapWord
+
+	helpScroll := container.NewScroll(helpText)
+	helpScroll.Resize(fyne.NewSize(700, 600))
+
+	// Create dialog with better sizing
+	helpDialog := dialog.NewCustom("📚 Modern EBook Reader - Complete Help Guide", "Close", helpScroll, ma.Window)
+	helpDialog.Resize(fyne.NewSize(750, 650))
+	helpDialog.Show()
+}
+
+// showQuickHelp displays a compact help overlay with essential shortcuts
+func (ma *ModernApplication) showQuickHelp() {
+	quickHelpContent := `# 🚀 Quick Help - Essential Shortcuts
+
+## Most Used Commands
+- **F1** - Full help guide
+- **Ctrl+O** - Open document
+- **← →** - Previous/Next page
+- **Ctrl + +/-** - Zoom in/out
+- **Ctrl+1** - Fit to page
+- **Home/End** - First/Last page
+
+## Mouse Controls
+- **Mouse wheel** - Scroll document
+- **Drag & drop** - Open files
+- **Double-click** - Toggle zoom
+
+*Press F1 for complete help guide*`
+
+	// Create compact help dialog
+	quickHelpText := widget.NewRichTextFromMarkdown(quickHelpContent)
+	quickHelpText.Wrapping = fyne.TextWrapWord
+
+	quickHelpDialog := dialog.NewCustom("⚡ Quick Help", "Got it!", quickHelpText, ma.Window)
+	quickHelpDialog.Resize(fyne.NewSize(400, 350))
+	quickHelpDialog.Show()
+}
+
+// setZoomEnabled enables or disables zoom controls
+func (ma *ModernApplication) setZoomEnabled(enabled bool) {
+	if enabled {
+		ma.zoomInButton.Enable()
+		ma.zoomOutButton.Enable()
+		ma.fitPageButton.Enable()
+		ma.fitWidthButton.Enable()
+	} else {
+		ma.zoomInButton.Disable()
+		ma.zoomOutButton.Disable()
+		ma.fitPageButton.Disable()
+		ma.fitWidthButton.Disable()
+	}
+}
+
+// Zoom functionality
+func (ma *ModernApplication) zoomIn() {
+	ma.setZoom(ma.zoomLevel * 1.2)
+}
+
+func (ma *ModernApplication) zoomOut() {
+	ma.setZoom(ma.zoomLevel / 1.2)
+}
+
+func (ma *ModernApplication) fitToPage() {
+	ma.fitMode = "page"
+	ma.applyFitMode()
+}
+
+func (ma *ModernApplication) fitToWidth() {
+	ma.fitMode = "width"
+	ma.applyFitMode()
+}
+
+func (ma *ModernApplication) setZoom(level float64) {
+	if level < 0.1 {
+		level = 0.1
+	}
+	if level > 5.0 {
+		level = 5.0
+	}
+
+	ma.zoomLevel = level
+	ma.fitMode = "custom"
+	ma.updateZoomDisplay()
+	ma.refreshCurrentPage()
+}
+
+func (ma *ModernApplication) applyFitMode() {
+	// Calculate appropriate zoom level based on fit mode
+	switch ma.fitMode {
+	case "page":
+		ma.zoomLevel = 1.0 // Will be handled by ImageFillContain
+	case "width":
+		ma.zoomLevel = 1.0 // Will be calculated based on container width
+	}
+	ma.updateZoomDisplay()
+	ma.refreshCurrentPage()
+}
+
+func (ma *ModernApplication) updateZoomDisplay() {
+	percentage := int(ma.zoomLevel * 100)
+	ma.zoomLabel.SetText(fmt.Sprintf("%d%%", percentage))
+
+	// Update status bar zoom info
+	if len(ma.statusBar.Objects) >= 5 {
+		if zoomLabel, ok := ma.statusBar.Objects[4].(*widget.Label); ok {
+			zoomLabel.SetText(fmt.Sprintf("Zoom: %d%% (%s)", percentage, ma.fitMode))
+		}
+	}
+}
+
+func (ma *ModernApplication) refreshCurrentPage() {
+	if ma.docManager.IsLoaded() {
+		ma.displayCurrentPage()
+	}
 }
 
 // Run starts the application
