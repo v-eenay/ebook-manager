@@ -11,6 +11,7 @@ A modern, cross-platform desktop ebook reader built with Go and Fyne, supporting
 
 ### Modern Interface
 - Clean, tabbed interface built with Fyne
+- Professional application icon integration
 - Renamed "Reader" tab for multi-format support
 - Enhanced visual hierarchy with modern styling
 - Responsive design that adapts to window size
@@ -52,9 +53,29 @@ A modern, cross-platform desktop ebook reader built with Go and Fyne, supporting
 
 ### Build Instructions
 ```bash
+# Install Fyne tools for icon integration
+go install fyne.io/tools/cmd/fyne@latest
+
+# Download dependencies
 go mod download
+
+# Standard build with embedded icon
 go build -o ebookreader-modern.exe
+
+# Optimized build (recommended)
+go build -ldflags="-s -w" -o ebookreader-modern.exe .
+
+# Use build scripts for enhanced features
+.\build.bat     # Windows batch script
+.\build.ps1     # PowerShell script (recommended)
 ```
+
+### Icon Integration
+The application includes professional icon integration:
+- Embedded icon resources using Fyne's resource system
+- System-level icon display (taskbar, title bar)
+- UI integration in welcome screen and help dialogs
+- Cross-platform compatibility (Windows, macOS, Linux)
 
 ## Usage
 
@@ -97,19 +118,26 @@ go build -o ebookreader-modern.exe
 ```
 ebook-manager/
 ├── main.go                      # Application entry point
+├── assets/                      # Application assets
+│   └── icon.png                # Application icon (256x256 PNG)
 ├── modernui/                    # Modern Fyne-based UI
 │   ├── app.go                  # Main application logic
 │   ├── enhanced_viewer.go      # Enhanced mouse interaction widget
+│   ├── resource.go             # Embedded icon resource (auto-generated)
 │   └── app_test.go             # Unit tests for UI components
 ├── reader/                      # Document reading engine
 │   ├── document.go             # Document interface and manager
 │   ├── pdf.go                  # PDF support (go-fitz)
 │   ├── epub.go                 # EPUB support (custom parser)
 │   └── mobi.go                 # MOBI support (basic)
+├── app.rc                      # Windows resource file
+├── build.ps1                   # PowerShell build script
+├── build.bat                   # Batch build script
 ├── go.mod                      # Go module definition
 ├── go.sum                      # Dependency checksums
 ├── LICENSE                     # MIT License
 ├── MODERNIZATION_SUMMARY.md    # Detailed modernization notes
+├── ICON_INTEGRATION.md         # Icon integration guide
 └── README.md                   # This file
 ```
 
