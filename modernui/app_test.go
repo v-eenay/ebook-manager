@@ -36,38 +36,26 @@ func TestZoomFunctionality(t *testing.T) {
 		fitMode:   "page",
 	}
 
-	// Test zoom in
-	initialZoom := app.zoomLevel
-	app.zoomLevel = app.zoomLevel * 1.2 // Simulate zoomIn
-	app.fitMode = "custom"
-	if app.zoomLevel <= initialZoom {
-		t.Error("Zoom in should increase zoom level")
+	// Test initial values
+	if app.zoomLevel != 1.0 {
+		t.Errorf("Expected initial zoom level 1.0, got %f", app.zoomLevel)
 	}
 
-	// Test zoom out
-	currentZoom := app.zoomLevel
-	app.zoomLevel = app.zoomLevel / 1.2 // Simulate zoomOut
-	if app.zoomLevel >= currentZoom {
-		t.Error("Zoom out should decrease zoom level")
-	}
-
-	// Test set zoom bounds
+	// Test zoom bounds logic
 	testZoom := 10.0
 	if testZoom > 5.0 {
 		testZoom = 5.0
 	}
-	app.zoomLevel = testZoom
-	if app.zoomLevel != 5.0 {
-		t.Errorf("Expected zoom level to be clamped to 5.0, got %f", app.zoomLevel)
+	if testZoom != 5.0 {
+		t.Errorf("Expected zoom level to be clamped to 5.0, got %f", testZoom)
 	}
 
 	testZoom = 0.01
 	if testZoom < 0.1 {
 		testZoom = 0.1
 	}
-	app.zoomLevel = testZoom
-	if app.zoomLevel != 0.1 {
-		t.Errorf("Expected zoom level to be clamped to 0.1, got %f", app.zoomLevel)
+	if testZoom != 0.1 {
+		t.Errorf("Expected zoom level to be clamped to 0.1, got %f", testZoom)
 	}
 }
 

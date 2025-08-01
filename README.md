@@ -119,7 +119,7 @@ The application includes professional icon integration:
 ebook-manager/
 ├── main.go                      # Application entry point
 ├── assets/                      # Application assets
-│   └── icon.png                # Application icon (256x256 PNG)
+│   └── icon.png                # Application icon
 ├── modernui/                    # Modern Fyne-based UI
 │   ├── app.go                  # Main application logic
 │   ├── enhanced_viewer.go      # Enhanced mouse interaction widget
@@ -130,14 +130,11 @@ ebook-manager/
 │   ├── pdf.go                  # PDF support (go-fitz)
 │   ├── epub.go                 # EPUB support (custom parser)
 │   └── mobi.go                 # MOBI support (basic)
-├── app.rc                      # Windows resource file
 ├── build.ps1                   # PowerShell build script
 ├── build.bat                   # Batch build script
 ├── go.mod                      # Go module definition
 ├── go.sum                      # Dependency checksums
 ├── LICENSE                     # MIT License
-├── MODERNIZATION_SUMMARY.md    # Detailed modernization notes
-├── ICON_INTEGRATION.md         # Icon integration guide
 └── README.md                   # This file
 ```
 

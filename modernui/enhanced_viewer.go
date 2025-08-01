@@ -63,25 +63,14 @@ func (e *EnhancedImageViewer) CreateRenderer() fyne.WidgetRenderer {
 }
 
 // MouseIn handles mouse enter events
-func (e *EnhancedImageViewer) MouseIn(*desktop.MouseEvent) {
-	// Could be used for hover effects
-}
+func (e *EnhancedImageViewer) MouseIn(*desktop.MouseEvent) {}
 
 // MouseOut handles mouse exit events
-func (e *EnhancedImageViewer) MouseOut() {
-	// Could be used for hover effects
-}
+func (e *EnhancedImageViewer) MouseOut() {}
 
 // MouseMoved handles mouse movement
 func (e *EnhancedImageViewer) MouseMoved(event *desktop.MouseEvent) {
 	if e.isDragging && e.image != nil {
-		// Calculate drag delta (for future implementation)
-		_ = event.Position.X - e.lastPos.X // deltaX
-		_ = event.Position.Y - e.lastPos.Y // deltaY
-
-		// Update scroll position (this would need custom implementation)
-		// For now, Fyne's scroll container handles this automatically
-
 		e.lastPos = event.Position
 	}
 }
@@ -101,11 +90,7 @@ func (e *EnhancedImageViewer) MouseUp(event *desktop.MouseEvent) {
 
 // Scrolled handles scroll wheel events
 func (e *EnhancedImageViewer) Scrolled(event *fyne.ScrollEvent) {
-	// For now, use simple scroll behavior
-	// Advanced modifier key detection would require platform-specific implementation
-
-	// Regular vertical scrolling
-	// For documents, we might want page-based scrolling
+	// Use page-based scrolling for documents
 	if e.onPageChange != nil && event.Scrolled.DY != 0 {
 		if event.Scrolled.DY > 0 {
 			e.onPageChange(-1) // Previous page
@@ -113,7 +98,6 @@ func (e *EnhancedImageViewer) Scrolled(event *fyne.ScrollEvent) {
 			e.onPageChange(1) // Next page
 		}
 	} else {
-		// Default scroll behavior
 		e.scrollable.Scrolled(event)
 	}
 }

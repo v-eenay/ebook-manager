@@ -8,12 +8,12 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/widget"
-	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 
 	"ebookreader/reader"
 )
@@ -754,18 +754,11 @@ func (ma *ModernApplication) setupKeyboardShortcuts() {
 
 // setupMouseHandling configures mouse interactions
 func (ma *ModernApplication) setupMouseHandling() {
-	// Fyne provides automatic mouse wheel scrolling for scroll containers
-	// The pdfContainer and textContainer automatically support:
-	// - Mouse wheel scrolling (vertical)
-	// - Shift+wheel for horizontal scrolling
+	// Mouse interactions are handled automatically by Fyne:
+	// - Mouse wheel scrolling (vertical and horizontal with Shift)
+	// - Pan/drag functionality when content is zoomed
 	// - Touch/trackpad gestures on supported platforms
-
-	// For enhanced zoom with Ctrl+wheel, we would need to implement
-	// custom mouse event handling, which requires more advanced Fyne usage
-	// The current implementation provides zoom via toolbar buttons and keyboard shortcuts
-
-	// Pan/drag functionality is automatically provided by Fyne's scroll container
-	// when content is larger than the container (e.g., when zoomed in)
+	// Enhanced interactions are provided by the EnhancedImageViewer widget
 }
 
 // showError displays an error message
@@ -990,12 +983,16 @@ func (ma *ModernApplication) zoomOut() {
 
 func (ma *ModernApplication) fitToPage() {
 	ma.fitMode = "page"
-	ma.applyFitMode()
+	ma.zoomLevel = 1.0
+	ma.updateZoomDisplay()
+	ma.refreshCurrentPage()
 }
 
 func (ma *ModernApplication) fitToWidth() {
 	ma.fitMode = "width"
-	ma.applyFitMode()
+	ma.zoomLevel = 1.0
+	ma.updateZoomDisplay()
+	ma.refreshCurrentPage()
 }
 
 func (ma *ModernApplication) setZoom(level float64) {
@@ -1012,17 +1009,7 @@ func (ma *ModernApplication) setZoom(level float64) {
 	ma.refreshCurrentPage()
 }
 
-func (ma *ModernApplication) applyFitMode() {
-	// Calculate appropriate zoom level based on fit mode
-	switch ma.fitMode {
-	case "page":
-		ma.zoomLevel = 1.0 // Will be handled by ImageFillContain
-	case "width":
-		ma.zoomLevel = 1.0 // Will be calculated based on container width
-	}
-	ma.updateZoomDisplay()
-	ma.refreshCurrentPage()
-}
+
 
 func (ma *ModernApplication) updateZoomDisplay() {
 	percentage := int(ma.zoomLevel * 100)
