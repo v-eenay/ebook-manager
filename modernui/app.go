@@ -73,9 +73,15 @@ type ModernApplication struct {
 func NewModernApplication() *ModernApplication {
 	myApp := app.NewWithID("com.ebookreader.modern")
 
+	// Set the application icon for system integration
+	myApp.SetIcon(resourceIconPng)
+
 	window := myApp.NewWindow("Modern EBook Reader")
 	window.Resize(fyne.NewSize(1400, 900))
 	window.CenterOnScreen()
+
+	// Set the window icon
+	window.SetIcon(resourceIconPng)
 
 	application := &ModernApplication{
 		App:         myApp,
@@ -284,6 +290,11 @@ func (ma *ModernApplication) createStatusBar() {
 
 // showWelcomeScreen displays the welcome screen
 func (ma *ModernApplication) showWelcomeScreen() {
+	// Create a container with the app icon and welcome text
+	iconImage := canvas.NewImageFromResource(resourceIconPng)
+	iconImage.FillMode = canvas.ImageFillOriginal
+	iconImage.Resize(fyne.NewSize(128, 128))
+
 	welcomeContent := `
 # 📚 Modern EBook Reader
 
@@ -325,7 +336,21 @@ Welcome to the Modern EBook Reader - a cross-platform application for reading di
 *Drag and drop a file to begin reading, or press F1 for complete help!*
 `
 
-	ma.textEdit.ParseMarkdown(welcomeContent)
+	// Create welcome text widget
+	welcomeText := widget.NewRichTextFromMarkdown(welcomeContent)
+	welcomeText.Wrapping = fyne.TextWrapWord
+
+	// Create a container with icon and text
+	welcomeContainer := container.NewVBox(
+		container.NewCenter(iconImage),
+		widget.NewSeparator(),
+		welcomeText,
+	)
+
+	// Update the text container content
+	ma.textContainer.Content = welcomeContainer
+	ma.textContainer.Refresh()
+
 	// Update tab text
 	if len(ma.contentStack.Items) > 1 {
 		ma.contentStack.Items[1].Text = "📄 Welcome"
@@ -876,11 +901,22 @@ func (ma *ModernApplication) showHelp() {
 
 *Press Escape, click Close, or click outside this dialog to return to reading.*`
 
-	// Create help dialog with improved styling
+	// Create help dialog with improved styling and icon
 	helpText := widget.NewRichTextFromMarkdown(helpContent)
 	helpText.Wrapping = fyne.TextWrapWord
 
-	helpScroll := container.NewScroll(helpText)
+	// Add icon to help dialog
+	helpIcon := canvas.NewImageFromResource(resourceIconPng)
+	helpIcon.FillMode = canvas.ImageFillOriginal
+	helpIcon.Resize(fyne.NewSize(64, 64))
+
+	helpContainer := container.NewVBox(
+		container.NewCenter(helpIcon),
+		widget.NewSeparator(),
+		helpText,
+	)
+
+	helpScroll := container.NewScroll(helpContainer)
 	helpScroll.Resize(fyne.NewSize(700, 600))
 
 	// Create dialog with better sizing
@@ -908,12 +944,23 @@ func (ma *ModernApplication) showQuickHelp() {
 
 *Press F1 for complete help guide*`
 
-	// Create compact help dialog
+	// Create compact help dialog with icon
 	quickHelpText := widget.NewRichTextFromMarkdown(quickHelpContent)
 	quickHelpText.Wrapping = fyne.TextWrapWord
 
-	quickHelpDialog := dialog.NewCustom("⚡ Quick Help", "Got it!", quickHelpText, ma.Window)
-	quickHelpDialog.Resize(fyne.NewSize(400, 350))
+	// Add small icon to quick help
+	quickHelpIcon := canvas.NewImageFromResource(resourceIconPng)
+	quickHelpIcon.FillMode = canvas.ImageFillOriginal
+	quickHelpIcon.Resize(fyne.NewSize(48, 48))
+
+	quickHelpContainer := container.NewVBox(
+		container.NewCenter(quickHelpIcon),
+		widget.NewSeparator(),
+		quickHelpText,
+	)
+
+	quickHelpDialog := dialog.NewCustom("⚡ Quick Help", "Got it!", quickHelpContainer, ma.Window)
+	quickHelpDialog.Resize(fyne.NewSize(400, 400))
 	quickHelpDialog.Show()
 }
 

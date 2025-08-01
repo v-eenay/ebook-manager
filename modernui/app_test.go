@@ -180,6 +180,27 @@ func TestEnhancedViewer(t *testing.T) {
 	}
 }
 
+func TestIconResource(t *testing.T) {
+	// Test that the icon resource is available
+	if resourceIconPng == nil {
+		t.Error("Icon resource is nil")
+	}
+
+	if resourceIconPng.Name() == "" {
+		t.Error("Icon resource has no name")
+	}
+
+	if len(resourceIconPng.Content()) == 0 {
+		t.Error("Icon resource has no content")
+	}
+
+	// Test that it's a PNG resource
+	expectedName := "icon.png"
+	if resourceIconPng.Name() != expectedName {
+		t.Errorf("Expected icon name %s, got %s", expectedName, resourceIconPng.Name())
+	}
+}
+
 // Benchmark zoom operations
 func BenchmarkZoomOperations(b *testing.B) {
 	app := &ModernApplication{

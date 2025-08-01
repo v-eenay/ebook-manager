@@ -1,0 +1,37 @@
+// Windows Resource File for Modern EBook Reader
+// This file defines the application icon for Windows builds
+
+#include <windows.h>
+
+// Application icon
+IDI_ICON1 ICON "assets/icon.png"
+
+// Version information
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS 0x0L
+FILEOS VOS__WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Binay Koirala"
+            VALUE "FileDescription", "Modern EBook Reader"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "ebookreader-modern"
+            VALUE "LegalCopyright", "Copyright (c) 2025 Binay Koirala"
+            VALUE "OriginalFilename", "ebookreader-modern.exe"
+            VALUE "ProductName", "Modern EBook Reader"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
