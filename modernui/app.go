@@ -56,10 +56,12 @@ type ModernApplication struct {
 	fitWidthButton  *widget.Button
 	zoomLabel       *widget.Label
 	helpButton      *widget.Button
+	zoomModeButton  *widget.Button
 
 	// Zoom state
 	zoomLevel       float64
 	fitMode         string // "page", "width", "custom"
+	scrollZoomMode  bool   // Toggle between page navigation and zoom with scroll wheel
 
 	// Status
 	statusBar       *fyne.Container
@@ -87,10 +89,11 @@ func NewModernApplication() *ModernApplication {
 		App:         myApp,
 		Window:      window,
 		docManager:  reader.NewDocumentManager(),
-		currentPage: 1,
-		zoomLevel:   1.0,
-		fitMode:     "page",
-		shortcuts:   make(map[string]func()),
+		currentPage:    1,
+		zoomLevel:      1.0,
+		fitMode:        "page",
+		scrollZoomMode: false, // Start with page navigation mode
+		shortcuts:      make(map[string]func()),
 	}
 
 	application.setupUI()
@@ -172,6 +175,9 @@ func (ma *ModernApplication) createToolbar() {
 	ma.fitWidthButton = widget.NewButton("Fit Width", ma.fitToWidth)
 	ma.zoomLabel = widget.NewLabel("100%")
 
+	// Zoom mode toggle button
+	ma.zoomModeButton = widget.NewButton("Scroll: Pages", ma.toggleScrollZoomMode)
+
 	// Help button with quick help option
 	ma.helpButton = widget.NewButtonWithIcon("Help (F1)", theme.HelpIcon(), ma.showHelp)
 
@@ -198,6 +204,8 @@ func (ma *ModernApplication) createToolbar() {
 		widget.NewSeparator(),
 		ma.fitPageButton,
 		ma.fitWidthButton,
+		widget.NewSeparator(),
+		ma.zoomModeButton,
 	)
 
 	helpSection := container.NewHBox(quickHelpButton, ma.helpButton)
@@ -237,9 +245,11 @@ func (ma *ModernApplication) createReaderView() {
 				ma.fitToPage()
 			}
 		} else {
-			// Zoom with mouse wheel
-			newZoom := ma.zoomLevel + delta
-			ma.setZoom(newZoom)
+			// Zoom with scroll wheel (when in zoom mode)
+			if ma.scrollZoomMode {
+				newZoom := ma.zoomLevel + delta
+				ma.setZoom(newZoom)
+			}
 		}
 	})
 
@@ -249,6 +259,11 @@ func (ma *ModernApplication) createReaderView() {
 		} else {
 			ma.goToPreviousPage()
 		}
+	})
+
+	// Set the zoom mode checker
+	ma.enhancedViewer.SetGetZoomMode(func() bool {
+		return ma.scrollZoomMode
 	})
 
 	// Get the scroll container from enhanced viewer
@@ -659,6 +674,7 @@ func (ma *ModernApplication) setupKeyboardShortcuts() {
 		"Ctrl+0":       func() { ma.setZoom(1.0) },
 		"Ctrl+1":       ma.fitToPage,
 		"Ctrl+2":       ma.fitToWidth,
+		"Ctrl+Z":       ma.toggleScrollZoomMode,
 	}
 
 	// Set up actual Fyne keyboard shortcuts
@@ -750,6 +766,28 @@ func (ma *ModernApplication) setupKeyboardShortcuts() {
 	}, func(shortcut fyne.Shortcut) {
 		ma.fitToWidth()
 	})
+
+	// Additional zoom shortcuts for better accessibility
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyPlus,
+		Modifier: fyne.KeyModifierControl,
+	}, func(shortcut fyne.Shortcut) {
+		ma.zoomIn()
+	})
+
+	// Toggle scroll zoom mode
+	canvas.AddShortcut(&desktop.CustomShortcut{
+		KeyName: fyne.KeyZ,
+		Modifier: fyne.KeyModifierControl,
+	}, func(shortcut fyne.Shortcut) {
+		ma.toggleScrollZoomMode()
+	})
+}
+
+// handleGlobalKeyEvent handles global key events for modifier tracking
+func (ma *ModernApplication) handleGlobalKeyEvent(event *fyne.KeyEvent) {
+	// This can be used for global key state tracking if needed
+	// For now, we'll rely on the existing keyboard shortcuts
 }
 
 // setupMouseHandling configures mouse interactions
@@ -759,6 +797,14 @@ func (ma *ModernApplication) setupMouseHandling() {
 	// - Pan/drag functionality when content is zoomed
 	// - Touch/trackpad gestures on supported platforms
 	// Enhanced interactions are provided by the EnhancedImageViewer widget
+
+	// Set up focus handling for the enhanced viewer to receive events
+	if ma.enhancedViewer != nil {
+		ma.Window.Canvas().SetOnTypedKey(func(event *fyne.KeyEvent) {
+			// Handle global key events for modifier tracking
+			ma.handleGlobalKeyEvent(event)
+		})
+	}
 }
 
 // showError displays an error message
@@ -810,13 +856,14 @@ func (ma *ModernApplication) showHelp() {
 - **Ctrl + 0** - Reset zoom to 100%
 - **Ctrl + 1** - Fit document to page
 - **Ctrl + 2** - Fit document to width
+- **Ctrl + Z** - Toggle mouse wheel mode (page navigation ↔ zoom)
 
 ## 🖱️ Mouse & Touch Controls
 
 ### Navigation
-- **Mouse wheel** - Scroll through document content
-- **Shift + Mouse wheel** - Horizontal scrolling
-- **Ctrl + Mouse wheel** - Zoom in/out (when available)
+- **Mouse wheel** - Navigate pages OR zoom (toggle with Ctrl+Z)
+- **Shift + Mouse wheel** - Horizontal scrolling when zoomed
+- **Double-click** - Toggle between fit modes
 
 ### Document Interaction
 - **Click and drag** - Pan around zoomed documents
@@ -838,6 +885,7 @@ func (ma *ModernApplication) showHelp() {
 - **Fit Page** - Scale to fit entire page in view
 - **Fit Width** - Scale to fit page width
 - **Zoom %** - Current zoom level indicator
+- **Scroll Mode** - Toggle mouse wheel behavior (Pages/Zoom)
 
 ### Help Section
 - **Help (F1)** - Open this help guide
@@ -931,9 +979,9 @@ func (ma *ModernApplication) showQuickHelp() {
 - **Home/End** - First/Last page
 
 ## Mouse Controls
-- **Mouse wheel** - Scroll document
+- **Mouse wheel** - Navigate pages (default) or zoom (Ctrl+Z to toggle)
 - **Drag & drop** - Open files
-- **Double-click** - Toggle zoom
+- **Double-click** - Toggle zoom modes
 
 *Press F1 for complete help guide*`
 
@@ -964,11 +1012,13 @@ func (ma *ModernApplication) setZoomEnabled(enabled bool) {
 		ma.zoomOutButton.Enable()
 		ma.fitPageButton.Enable()
 		ma.fitWidthButton.Enable()
+		ma.zoomModeButton.Enable()
 	} else {
 		ma.zoomInButton.Disable()
 		ma.zoomOutButton.Disable()
 		ma.fitPageButton.Disable()
 		ma.fitWidthButton.Disable()
+		ma.zoomModeButton.Disable()
 	}
 }
 
@@ -1026,6 +1076,35 @@ func (ma *ModernApplication) updateZoomDisplay() {
 func (ma *ModernApplication) refreshCurrentPage() {
 	if ma.docManager.IsLoaded() {
 		ma.displayCurrentPage()
+	}
+}
+
+// toggleScrollZoomMode toggles between page navigation and zoom mode for mouse wheel
+func (ma *ModernApplication) toggleScrollZoomMode() {
+	ma.scrollZoomMode = !ma.scrollZoomMode
+
+	// Update button text to reflect current mode
+	if ma.scrollZoomMode {
+		ma.zoomModeButton.SetText("Scroll: Zoom")
+	} else {
+		ma.zoomModeButton.SetText("Scroll: Pages")
+	}
+
+	// Update status bar to show current mode
+	ma.updateScrollModeStatus()
+}
+
+// updateScrollModeStatus updates the status bar with current scroll mode
+func (ma *ModernApplication) updateScrollModeStatus() {
+	if len(ma.statusBar.Objects) > 0 {
+		if statusLabel, ok := ma.statusBar.Objects[0].(*widget.Label); ok {
+			baseText := "Ready - Press F1 for help"
+			if ma.scrollZoomMode {
+				statusLabel.SetText(baseText + " | Mouse wheel: Zoom mode")
+			} else {
+				statusLabel.SetText(baseText + " | Mouse wheel: Page navigation")
+			}
+		}
 	}
 }
 
