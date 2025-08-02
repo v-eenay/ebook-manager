@@ -1,0 +1,16 @@
+# Modern EBook Reader - Python Dependencies
+
+# GUI Framework (choose one)
+PyQt6>=6.4.0
+# PyQt5>=5.15.0  # Alternative if PyQt6 is not available
+
+# Document Processing Libraries
+PyMuPDF>=1.23.0        # PDF rendering and processing
+ebooklib>=0.18         # EPUB reading and processing
+beautifulsoup4>=4.11.0 # HTML parsing for EPUB/MOBI
+
+# Image Processing
+Pillow>=9.0.0          # Image handling and conversion
+
+# Utilities
+chardet>=5.0.0         # Character encoding detection

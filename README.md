@@ -1,246 +1,174 @@
 # Modern EBook Reader
 
-A modern, cross-platform desktop ebook reader built with Go and Fyne, supporting multiple document formats with enhanced UI, zoom controls, keyboard shortcuts, and comprehensive help system.
+A clean, minimal ebook reader application built with Python and Qt, supporting PDF, EPUB, and MOBI formats with a focus on distraction-free reading.
 
-## Features
+## ✨ Features
 
-### Supported Formats
-- **PDF**: High-quality rendering with MuPDF (go-fitz)
-- **EPUB**: Full support with custom parser
-- **MOBI**: Basic text extraction and reading
+- **Multi-format Support**: Read PDF, EPUB, and MOBI files
+- **Modern Interface**: Clean, minimal design with content-first approach
+- **Responsive Performance**: Fast document loading and smooth navigation
+- **Zoom Controls**: Zoom in/out with mouse wheel or keyboard shortcuts
+- **Keyboard Navigation**: Complete set of navigation shortcuts
+- **Drag & Drop**: Simply drag files into the window to open them
+- **Cross-platform**: Works on Windows, macOS, and Linux
 
-### Modern Interface
-- Clean, tabbed interface built with Fyne
-- Professional application icon integration
-- Renamed "Reader" tab for multi-format support
-- Enhanced visual hierarchy with modern styling
-- Responsive design that adapts to window size
-- Modern navigation controls with icons
-- Improved toolbar with organized sections
-
-### Enhanced Navigation & Controls
-- Page-by-page navigation (PDF)
-- Scroll-based reading (EPUB/MOBI)
-- Mouse wheel scrolling support
-- Jump to specific pages
-- First/Previous/Next/Last page controls
-- Comprehensive keyboard shortcuts (F1 for help)
-
-### Zoom & Viewing Options
-- Zoom in/out controls with visual feedback
-- Fit to Page and Fit to Width options
-- Real-time zoom level display
-- Pan/drag functionality for zoomed documents
-- Multiple viewing modes for optimal reading
-
-### User Experience
-- Drag and drop file support
-- Real-time page indicators
-- Document information display
-- Comprehensive help system (F1 key)
-- Quick help for essential shortcuts
-- Cross-platform compatibility (Windows, macOS, Linux)
-- Fully offline operation
-
-## Building
+## 🚀 Quick Start
 
 ### Prerequisites
-- Go 1.19 or later
-- C compiler (for go-fitz)
-  - Windows: MinGW-w64 or Visual Studio
-  - macOS: Xcode command line tools
-  - Linux: GCC
 
-### Build Instructions
+- Python 3.8 or later
+- PyQt6 or PyQt5
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/v-eenay/ebook-manager.git
+   cd ebook-manager
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the application:**
+   ```bash
+   python main.py
+   ```
+
+### Alternative Installation (using pip)
+
 ```bash
-# Install Fyne tools for icon integration
-go install fyne.io/tools/cmd/fyne@latest
-
-# Download dependencies
-go mod download
-
-# Standard build with embedded icon
-go build -o ebookreader-modern.exe
-
-# Optimized build (recommended)
-go build -ldflags="-s -w" -o ebookreader-modern.exe .
-
-# Use build scripts for enhanced features
-.\build.bat     # Windows batch script
-.\build.ps1     # PowerShell script (recommended)
+pip install -e .
+ebook-reader
 ```
 
-### Icon Integration
-The application includes professional icon integration:
-- Embedded icon resources using Fyne's resource system
-- System-level icon display (taskbar, title bar)
-- UI integration in welcome screen and help dialogs
-- Cross-platform compatibility (Windows, macOS, Linux)
-
-## Usage
-
-### Running the Application
-```bash
-./ebookreader-modern.exe
-```
+## 📖 Usage
 
 ### Opening Documents
-1. Click "Open Document" button in the toolbar
-2. Drag and drop files onto the application window
-3. Supported file extensions: `.pdf`, `.epub`, `.mobi`
 
-### Navigation & Controls
-- Use arrow buttons for page navigation
-- Enter page numbers directly in the page field
-- Switch between Reader and Text View tabs
-- Use mouse wheel for scrolling and page navigation
-- Keyboard shortcuts for all major functions
+- **File Menu**: Click "Open Document" or press `Ctrl+O`
+- **Drag & Drop**: Drag PDF, EPUB, or MOBI files directly into the window
+- **Welcome Screen**: Use the "Open Document" button on the welcome screen
 
-### Keyboard Shortcuts
-- **F1** - Show complete help guide
-- **Ctrl+O** - Open document
-- **← →** - Previous/Next page
-- **Page Up/Down** - Navigate pages
-- **Home/End** - First/Last page
-- **Ctrl + +/-** - Zoom in/out
-- **Ctrl+0** - Reset zoom to 100%
-- **Ctrl+1** - Fit to page
-- **Ctrl+2** - Fit to width
+### Navigation
+
+- **Arrow Keys**: Navigate between pages (`←` / `→`)
+- **Mouse Wheel**: Scroll through pages
+- **Keyboard Shortcuts**: `Home`/`End` for first/last page
+- **Page Up/Down**: Navigate pages
 
 ### Zoom Controls
-- Use toolbar zoom buttons
-- Ctrl+mouse wheel for zoom (where supported)
-- Fit to Page/Width buttons for optimal viewing
-- Real-time zoom percentage display
 
-## Project Structure
+- **Mouse Wheel**: Hold `Ctrl` while scrolling to zoom
+- **Keyboard**: `Ctrl +/-` to zoom in/out
+- **Toolbar**: Use zoom buttons in the toolbar
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+O` | Open document |
+| `←` / `→` | Previous/Next page |
+| `Home` / `End` | First/Last page |
+| `Page Up` / `Page Down` | Navigate pages |
+| `Ctrl +` / `Ctrl -` | Zoom in/out |
+
+## 🏗️ Architecture
 
 ```
 ebook-manager/
-├── main.go                      # Application entry point
+├── main.py                      # Application entry point
+├── requirements.txt             # Python dependencies
+├── setup.py                     # Package setup
 ├── assets/                      # Application assets
 │   └── icon.png                # Application icon
-├── modernui/                    # Modern Fyne-based UI
-│   ├── app.go                  # Main application logic
-│   ├── enhanced_viewer.go      # Enhanced mouse interaction widget
-│   ├── resource.go             # Embedded icon resource (auto-generated)
-│   └── app_test.go             # Unit tests for UI components
-├── reader/                      # Document reading engine
-│   ├── document.go             # Document interface and manager
-│   ├── pdf.go                  # PDF support (go-fitz)
-│   ├── epub.go                 # EPUB support (custom parser)
-│   └── mobi.go                 # MOBI support (basic)
-├── build.ps1                   # PowerShell build script
-├── build.bat                   # Batch build script
-├── go.mod                      # Go module definition
-├── go.sum                      # Dependency checksums
-├── LICENSE                     # MIT License
+├── src/                         # Source code
+│   ├── ui/                      # User interface components
+│   │   ├── main_window.py      # Main application window
+│   │   ├── document_viewer.py  # Document display widget
+│   │   └── welcome_widget.py   # Welcome screen
+│   ├── readers/                 # Document reading engines
+│   │   ├── document_manager.py # Document loading manager
+│   │   ├── base_reader.py      # Abstract base reader
+│   │   ├── pdf_reader.py       # PDF support (PyMuPDF)
+│   │   ├── epub_reader.py      # EPUB support (ebooklib)
+│   │   └── mobi_reader.py      # MOBI support (basic)
+│   └── utils/                   # Utility modules
+├── LICENSE                      # MIT License
 └── README.md                   # This file
 ```
 
-## Architecture
+## 🔧 Development
 
-### Document Interface
-The application uses a flexible document interface that allows easy extension to support additional formats:
+### Setting up Development Environment
 
-```go
-type Document interface {
-    GetPageCount() int
-    GetPage(pageNum int) (*Page, error)
-    GetMetadata() *Metadata
-    Close() error
-}
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/v-eenay/ebook-manager.git
+   cd ebook-manager
+   ```
 
-### Format Support
-- **PDF**: Uses MuPDF via go-fitz for high-quality rendering
-- **EPUB**: Custom ZIP-based parser with HTML-to-text conversion
-- **MOBI**: Simplified text extraction with basic pagination
+2. **Create virtual environment:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-### UI Framework
-Built with Fyne v2.6.2 for:
-- Native look and feel across platforms
-- Hardware-accelerated rendering
-- Touch and high-DPI support
-- Comprehensive widget set
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Dependencies
+4. **Run the application:**
+   ```bash
+   python main.py
+   ```
 
-- `fyne.io/fyne/v2` - Modern GUI framework
-- `github.com/gen2brain/go-fitz` - PDF rendering (MuPDF bindings)
-- `archive/zip` - EPUB file handling
-- `encoding/xml` - EPUB metadata parsing
-- Standard Go libraries for file handling and UI
+### Dependencies
 
-## Testing
+- **PyQt6/PyQt5**: Cross-platform GUI framework
+- **PyMuPDF**: PDF rendering and processing
+- **ebooklib**: EPUB reading and processing
+- **BeautifulSoup4**: HTML parsing for EPUB/MOBI
+- **Pillow**: Image handling and conversion
 
-The project includes comprehensive unit tests and benchmarks:
+## 📋 Supported Formats
 
-```bash
-# Run all tests
-go test ./modernui -v
+| Format | Support Level | Features |
+|--------|---------------|----------|
+| **PDF** | Full | High-quality rendering, zoom, navigation |
+| **EPUB** | Good | Text extraction, chapter navigation |
+| **MOBI** | Basic | Text extraction, basic navigation |
 
-# Run benchmarks
-go test -bench=. ./modernui
+## 🎯 Design Philosophy
 
-# Build and test
-go build -o ebookreader-modern.exe .
-```
+This application follows modern UI/UX principles:
 
-### Test Coverage
-- Application structure validation
-- Zoom functionality testing
-- Fit mode operations
-- UI component initialization
-- Keyboard shortcuts mapping
-- Enhanced viewer functionality
-- Performance benchmarks
+- **Minimal Design**: Clean, distraction-free interface
+- **Content First**: Document content is the primary focus
+- **Responsive**: Fast, snappy interactions
+- **Accessible**: High contrast, readable typography
+- **Professional**: Suitable for productivity use
 
-## Future Enhancements
+## 🤝 Contributing
 
-- Advanced zoom with Ctrl+mouse wheel (platform-specific)
-- Custom themes and dark mode support
-- Bookmarks and annotations system
-- Full-text search across documents
-- Reading progress tracking
-- Recent files quick access
-- Cloud integration and sync
-- Additional format support (TXT, RTF, etc.)
-- Reading statistics and analytics
-- Full-screen reading mode
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Author
-
-**Binay Koirala**
-
-- 🌐 **LinkedIn**: [linkedin.com/in/veenay](https://linkedin.com/in/veenay)
-- 🐙 **GitHub**: [github.com/v-eenay](https://github.com/v-eenay)
-- 📧 **Email**: [koiralavinay@gmail.com](mailto:koiralavinay@gmail.com)
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-### Development Setup
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Copyright © 2025 Binay Koirala. All rights reserved.
+## 🙏 Acknowledgments
 
-## Acknowledgments
-
-- [Fyne](https://fyne.io/) - Modern GUI framework for Go
-- [go-fitz](https://github.com/gen2brain/go-fitz) - MuPDF bindings for PDF rendering
-- [MuPDF](https://mupdf.com/) - Lightweight PDF and XPS viewer
-- Go community for excellent libraries and tools
-
----
-
-**⭐ If you find this project useful, please consider giving it a star on GitHub!**
+- [PyQt](https://www.riverbankcomputing.com/software/pyqt/) for the excellent GUI framework
+- [PyMuPDF](https://pymupdf.readthedocs.io/) for PDF rendering capabilities
+- [ebooklib](https://github.com/aerkalov/ebooklib) for EPUB support
+- The open-source community for various libraries and tools
