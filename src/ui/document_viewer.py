@@ -42,6 +42,31 @@ class DocumentViewer(QWidget):
         # Create scroll area for document content
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setStyleSheet("""
+            QScrollArea {
+                background-color: #F8F9FA;
+                border: none;
+            }
+            QScrollBar:vertical {
+                background-color: #F8F9FA;
+                width: 12px;
+                border: none;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #BDBDBD;
+                border-radius: 6px;
+                min-height: 20px;
+                margin: 2px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: #9E9E9E;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
+            }
+        """)
         if QT_VERSION == 6:
             self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.scroll_area.setFrameStyle(QFrame.Shape.NoFrame)
@@ -56,9 +81,15 @@ class DocumentViewer(QWidget):
             self.content_label.setAlignment(Qt.AlignCenter)
         self.content_label.setStyleSheet("""
             QLabel {
-                background-color: white;
+                background-color: #FFFFFF;
                 border: 1px solid #E0E0E0;
-                margin: 10px;
+                border-radius: 4px;
+                margin: 16px;
+                padding: 16px;
+                color: #212121;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
             }
         """)
         self.content_label.setText("No document loaded")
@@ -112,10 +143,41 @@ class DocumentViewer(QWidget):
                 self.content_label.setPixmap(scaled_pixmap)
                 self.content_label.resize(scaled_pixmap.size())
             else:
-                # Handle text content (for EPUB/MOBI)
-                self.content_label.setText(str(page_content))
-                
+                # Handle text content (for EPUB/MOBI) with better formatting
+                formatted_text = str(page_content)
+                # Ensure good contrast and readability for text content
+                self.content_label.setStyleSheet("""
+                    QLabel {
+                        background-color: #FFFFFF;
+                        border: 1px solid #E0E0E0;
+                        border-radius: 4px;
+                        margin: 16px;
+                        padding: 24px;
+                        color: #212121;
+                        font-family: Georgia, 'Times New Roman', serif;
+                        font-size: 16px;
+                        line-height: 1.8;
+                        text-align: left;
+                    }
+                """)
+                self.content_label.setText(formatted_text)
+
         except Exception as e:
+            # Error message with high contrast
+            self.content_label.setStyleSheet("""
+                QLabel {
+                    background-color: #FFF3E0;
+                    border: 1px solid #FFB74D;
+                    border-radius: 4px;
+                    margin: 16px;
+                    padding: 24px;
+                    color: #E65100;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    text-align: center;
+                }
+            """)
             self.content_label.setText(f"Error displaying page: {str(e)}")
             
     def previous_page(self):

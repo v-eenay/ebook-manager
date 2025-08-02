@@ -141,54 +141,95 @@ class MainWindow(QMainWindow):
         status_bar.showMessage("Ready")
         
     def apply_modern_theme(self):
-        """Apply modern, minimal styling to the application."""
-        # Set a clean, modern stylesheet
+        """Apply modern, minimal styling with high contrast and accessibility."""
+        # Set a clean, high-contrast stylesheet following WCAG AA guidelines
         self.setStyleSheet("""
+            /* Main Window - Pure white background with dark text */
             QMainWindow {
-                background-color: #FAFAFA;
+                background-color: #FFFFFF;
                 color: #212121;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
+
+            /* Toolbar - Minimal design with subtle borders */
             QToolBar {
-                background-color: #F5F5F5;
+                background-color: #FFFFFF;
                 border: none;
-                spacing: 8px;
-                padding: 4px;
+                border-bottom: 1px solid #E0E0E0;
+                spacing: 4px;
+                padding: 8px 12px;
             }
+
+            /* Toolbar Buttons - Clean, minimal styling */
             QToolBar QToolButton {
                 background-color: transparent;
                 border: 1px solid transparent;
-                border-radius: 4px;
-                padding: 6px 12px;
-                margin: 2px;
+                border-radius: 6px;
+                padding: 8px 16px;
+                margin: 0px 2px;
+                color: #212121;
+                font-weight: 500;
+                min-height: 20px;
             }
+
             QToolBar QToolButton:hover {
-                background-color: #E0E0E0;
-                border-color: #BDBDBD;
+                background-color: #F8F9FA;
+                border-color: #E0E0E0;
             }
+
             QToolBar QToolButton:pressed {
-                background-color: #D0D0D0;
+                background-color: #F0F0F0;
+                border-color: #D0D0D0;
             }
+
+            QToolBar QToolButton:disabled {
+                color: #9E9E9E;
+                background-color: transparent;
+                border-color: transparent;
+            }
+
+            /* Toolbar Labels - High contrast text */
+            QToolBar QLabel {
+                color: #212121;
+                font-weight: 500;
+                padding: 0px 8px;
+            }
+
+            /* Tab Widget - Clean, minimal tabs */
             QTabWidget::pane {
                 border: none;
                 background-color: #FFFFFF;
+                border-top: 1px solid #E0E0E0;
             }
+
             QTabBar::tab {
-                background-color: #F5F5F5;
+                background-color: #FFFFFF;
                 border: none;
-                padding: 8px 16px;
-                margin-right: 2px;
+                border-bottom: 2px solid transparent;
+                padding: 12px 20px;
+                margin-right: 0px;
+                color: #616161;
+                font-weight: 500;
             }
+
             QTabBar::tab:selected {
                 background-color: #FFFFFF;
-                border-bottom: 2px solid #4285F4;
+                border-bottom: 2px solid #1976D2;
+                color: #212121;
             }
-            QTabBar::tab:hover {
-                background-color: #E8E8E8;
+
+            QTabBar::tab:hover:!selected {
+                background-color: #F8F9FA;
+                color: #212121;
             }
+
+            /* Status Bar - Minimal with high contrast */
             QStatusBar {
-                background-color: #F5F5F5;
+                background-color: #FFFFFF;
                 border-top: 1px solid #E0E0E0;
-                color: #666666;
+                color: #616161;
+                font-size: 12px;
+                padding: 4px 12px;
             }
         """)
         

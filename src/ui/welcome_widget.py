@@ -43,12 +43,13 @@ class WelcomeWidget(QWidget):
 
         # Create main container
         container = QFrame()
-        container.setMaximumWidth(500)
+        container.setMaximumWidth(600)
         container.setStyleSheet("""
             QFrame {
-                background-color: white;
-                border-radius: 8px;
-                padding: 40px;
+                background-color: #FFFFFF;
+                border: 1px solid #E0E0E0;
+                border-radius: 12px;
+                padding: 48px;
             }
         """)
 
@@ -79,14 +80,22 @@ class WelcomeWidget(QWidget):
         # App title
         title_label = QLabel("Modern EBook Reader")
         title_font = QFont()
-        title_font.setPointSize(24)
-        title_font.setBold(True)
+        title_font.setFamily("-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif")
+        title_font.setPointSize(28)
+        if QT_VERSION == 6:
+            title_font.setWeight(QFont.Weight.Bold)
+        else:
+            title_font.setWeight(QFont.Bold)
         title_label.setFont(title_font)
         if QT_VERSION == 6:
             title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
             title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("color: #212121; margin: 10px 0;")
+        title_label.setStyleSheet("""
+            color: #212121;
+            margin: 16px 0px 24px 0px;
+            font-weight: 700;
+        """)
         container_layout.addWidget(title_label)
         
         # Description
@@ -103,10 +112,11 @@ class WelcomeWidget(QWidget):
             desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
         desc_label.setStyleSheet("""
-            color: #666666;
-            font-size: 14px;
-            line-height: 1.5;
-            margin: 10px 0;
+            color: #424242;
+            font-size: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 16px 0px 32px 0px;
         """)
         container_layout.addWidget(desc_label)
         
@@ -114,19 +124,25 @@ class WelcomeWidget(QWidget):
         open_button = QPushButton("Open Document")
         open_button.setStyleSheet("""
             QPushButton {
-                background-color: #4285F4;
-                color: white;
+                background-color: #1976D2;
+                color: #FFFFFF;
                 border: none;
-                border-radius: 6px;
-                padding: 12px 24px;
-                font-size: 14px;
-                font-weight: bold;
+                border-radius: 8px;
+                padding: 16px 32px;
+                font-size: 16px;
+                font-weight: 600;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                min-width: 160px;
             }
             QPushButton:hover {
-                background-color: #3367D6;
+                background-color: #1565C0;
             }
             QPushButton:pressed {
-                background-color: #2E5BBA;
+                background-color: #0D47A1;
+            }
+            QPushButton:focus {
+                outline: 2px solid #1976D2;
+                outline-offset: 2px;
             }
         """)
         open_button.clicked.connect(self.open_file_requested.emit)
@@ -139,9 +155,10 @@ class WelcomeWidget(QWidget):
         else:
             formats_label.setAlignment(Qt.AlignCenter)
         formats_label.setStyleSheet("""
-            color: #999999;
-            font-size: 12px;
-            margin-top: 20px;
+            color: #757575;
+            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin-top: 24px;
         """)
         container_layout.addWidget(formats_label)
         
@@ -150,6 +167,7 @@ class WelcomeWidget(QWidget):
         # Set background
         self.setStyleSheet("""
             QWidget {
-                background-color: #FAFAFA;
+                background-color: #F8F9FA;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
         """)
