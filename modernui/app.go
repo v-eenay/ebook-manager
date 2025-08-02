@@ -3,6 +3,7 @@ package modernui
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"path/filepath"
 	"strings"
 
@@ -67,8 +68,69 @@ type ModernApplication struct {
 	statusBar       *fyne.Container
 	documentInfo    *widget.Label
 
+	// Welcome tab management
+	welcomeTabIndex int
+	hasWelcomeTab   bool
+
 	// Keyboard shortcuts
 	shortcuts       map[string]func()
+}
+
+// ModernTheme implements a clean, minimal theme for the application
+type ModernTheme struct{}
+
+// Color returns theme colors with a modern, minimal palette
+func (m ModernTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
+	switch name {
+	case theme.ColorNameBackground:
+		return color.RGBA{R: 250, G: 250, B: 250, A: 255} // Very light gray
+	case theme.ColorNameButton:
+		return color.RGBA{R: 245, G: 245, B: 245, A: 255} // Light gray
+	case theme.ColorNameDisabledButton:
+		return color.RGBA{R: 240, G: 240, B: 240, A: 255} // Lighter gray
+	case theme.ColorNameForeground:
+		return color.RGBA{R: 33, G: 33, B: 33, A: 255} // Dark gray text
+	case theme.ColorNameHover:
+		return color.RGBA{R: 240, G: 240, B: 240, A: 255} // Light hover
+	case theme.ColorNameInputBackground:
+		return color.RGBA{R: 255, G: 255, B: 255, A: 255} // Pure white
+	case theme.ColorNamePrimary:
+		return color.RGBA{R: 66, G: 133, B: 244, A: 255} // Subtle blue accent
+	case theme.ColorNameFocus:
+		return color.RGBA{R: 66, G: 133, B: 244, A: 100} // Subtle blue focus
+	case theme.ColorNameSelection:
+		return color.RGBA{R: 66, G: 133, B: 244, A: 50} // Very subtle selection
+	case theme.ColorNameSeparator:
+		return color.RGBA{R: 230, G: 230, B: 230, A: 255} // Light separator
+	case theme.ColorNameShadow:
+		return color.RGBA{R: 0, G: 0, B: 0, A: 20} // Very subtle shadow
+	}
+	return theme.DefaultTheme().Color(name, variant)
+}
+
+// Font returns clean, modern fonts
+func (m ModernTheme) Font(style fyne.TextStyle) fyne.Resource {
+	return theme.DefaultTheme().Font(style)
+}
+
+// Icon returns theme icons
+func (m ModernTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
+	return theme.DefaultTheme().Icon(name)
+}
+
+// Size returns theme sizes with modern spacing
+func (m ModernTheme) Size(name fyne.ThemeSizeName) float32 {
+	switch name {
+	case theme.SizeNamePadding:
+		return 8 // Reduced padding for cleaner look
+	case theme.SizeNameInlineIcon:
+		return 16 // Smaller icons
+	case theme.SizeNameScrollBar:
+		return 8 // Thinner scrollbars
+	case theme.SizeNameText:
+		return theme.DefaultTheme().Size(name) // Use default text size
+	}
+	return theme.DefaultTheme().Size(name)
 }
 
 // NewModernApplication creates a new modern application instance
@@ -89,17 +151,24 @@ func NewModernApplication() *ModernApplication {
 		App:         myApp,
 		Window:      window,
 		docManager:  reader.NewDocumentManager(),
-		currentPage:    1,
-		zoomLevel:      1.0,
-		fitMode:        "page",
-		scrollZoomMode: false, // Start with page navigation mode
-		shortcuts:      make(map[string]func()),
+		currentPage:     1,
+		zoomLevel:       1.0,
+		fitMode:         "page",
+		scrollZoomMode:  false, // Start with page navigation mode
+		welcomeTabIndex: -1,    // No welcome tab initially
+		hasWelcomeTab:   false,
+		shortcuts:       make(map[string]func()),
 	}
 
-	application.setupUI()
 	application.setupTheme()
+	application.setupUI()
 	application.setupKeyboardShortcuts()
 	return application
+}
+
+// setupTheme applies the modern minimal theme
+func (ma *ModernApplication) setupTheme() {
+	ma.App.Settings().SetTheme(&ModernTheme{})
 }
 
 // setupUI initializes the modern user interface
@@ -141,11 +210,7 @@ func (ma *ModernApplication) setupUI() {
 	ma.setupMouseHandling()
 }
 
-// setupTheme applies modern theming
-func (ma *ModernApplication) setupTheme() {
-	// Set a modern app theme
-	ma.App.Settings().SetTheme(theme.DefaultTheme())
-}
+
 
 // createToolbar creates the modern toolbar
 func (ma *ModernApplication) createToolbar() {
@@ -153,11 +218,11 @@ func (ma *ModernApplication) createToolbar() {
 	ma.openButton = widget.NewButtonWithIcon("Open Document", theme.FolderOpenIcon(), ma.openDocument)
 	ma.openButton.Importance = widget.HighImportance
 
-	// Navigation buttons with modern icons
-	ma.firstButton = widget.NewButtonWithIcon("First", theme.MediaSkipPreviousIcon(), ma.goToFirstPage)
-	ma.prevButton = widget.NewButtonWithIcon("Prev", theme.NavigateBackIcon(), ma.goToPreviousPage)
-	ma.nextButton = widget.NewButtonWithIcon("Next", theme.NavigateNextIcon(), ma.goToNextPage)
-	ma.lastButton = widget.NewButtonWithIcon("Last", theme.MediaSkipNextIcon(), ma.goToLastPage)
+	// Navigation buttons - icon only for minimal look
+	ma.firstButton = widget.NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), ma.goToFirstPage)
+	ma.prevButton = widget.NewButtonWithIcon("", theme.NavigateBackIcon(), ma.goToPreviousPage)
+	ma.nextButton = widget.NewButtonWithIcon("", theme.NavigateNextIcon(), ma.goToNextPage)
+	ma.lastButton = widget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), ma.goToLastPage)
 
 	// Page entry with improved styling
 	ma.pageEntry = widget.NewEntry()
@@ -168,9 +233,9 @@ func (ma *ModernApplication) createToolbar() {
 	}
 	ma.pageLabel = widget.NewLabel("of 0")
 
-	// Zoom controls
-	ma.zoomInButton = widget.NewButtonWithIcon("Zoom In", theme.ZoomInIcon(), ma.zoomIn)
-	ma.zoomOutButton = widget.NewButtonWithIcon("Zoom Out", theme.ZoomOutIcon(), ma.zoomOut)
+	// Zoom controls - icon only for minimal look
+	ma.zoomInButton = widget.NewButtonWithIcon("", theme.ZoomInIcon(), ma.zoomIn)
+	ma.zoomOutButton = widget.NewButtonWithIcon("", theme.ZoomOutIcon(), ma.zoomOut)
 	ma.fitPageButton = widget.NewButton("Fit Page", ma.fitToPage)
 	ma.fitWidthButton = widget.NewButton("Fit Width", ma.fitToWidth)
 	ma.zoomLabel = widget.NewLabel("100%")
@@ -178,11 +243,8 @@ func (ma *ModernApplication) createToolbar() {
 	// Zoom mode toggle button
 	ma.zoomModeButton = widget.NewButton("Scroll: Pages", ma.toggleScrollZoomMode)
 
-	// Help button with quick help option
-	ma.helpButton = widget.NewButtonWithIcon("Help (F1)", theme.HelpIcon(), ma.showHelp)
-
-	// Add a quick help button for essential shortcuts
-	quickHelpButton := widget.NewButtonWithIcon("Quick Help", theme.InfoIcon(), ma.showQuickHelp)
+	// Help button - minimal
+	ma.helpButton = widget.NewButtonWithIcon("Help", theme.HelpIcon(), ma.showHelp)
 
 	// Arrange toolbar sections
 	fileSection := container.NewHBox(ma.openButton)
@@ -208,7 +270,7 @@ func (ma *ModernApplication) createToolbar() {
 		ma.zoomModeButton,
 	)
 
-	helpSection := container.NewHBox(quickHelpButton, ma.helpButton)
+	helpSection := container.NewHBox(ma.helpButton)
 
 	// Create main toolbar with sections
 	ma.toolbar = container.NewVBox(
@@ -269,8 +331,8 @@ func (ma *ModernApplication) createReaderView() {
 	// Get the scroll container from enhanced viewer
 	ma.pdfContainer = ma.enhancedViewer.GetScrollContainer()
 
-	// Add to tabs with generic name
-	readerTab := container.NewTabItem("📖 Reader", ma.enhancedViewer)
+	// Add to tabs with minimal name
+	readerTab := container.NewTabItem("Reader", ma.enhancedViewer)
 	ma.contentStack.Append(readerTab)
 }
 
@@ -282,94 +344,94 @@ func (ma *ModernApplication) createTextView() {
 
 	ma.textContainer = container.NewScroll(ma.textEdit)
 
-	// Add to tabs with updated name
-	textTab := container.NewTabItem("📄 Text View", ma.textContainer)
+	// Add to tabs with minimal name
+	textTab := container.NewTabItem("Text", ma.textContainer)
 	ma.contentStack.Append(textTab)
 }
 
 // createStatusBar creates the status bar
 func (ma *ModernApplication) createStatusBar() {
-	ma.documentInfo = widget.NewLabel("Ready - Press F1 for help")
+	ma.documentInfo = widget.NewLabel("Ready")
 
-	progressInfo := widget.NewLabel("")
-	zoomInfo := widget.NewLabel("Zoom: 100%")
-
+	// Create minimal status bar
 	ma.statusBar = container.NewHBox(
 		ma.documentInfo,
-		widget.NewSeparator(),
-		progressInfo,
-		widget.NewSeparator(),
-		zoomInfo,
 	)
 }
 
 // showWelcomeScreen displays the welcome screen
 func (ma *ModernApplication) showWelcomeScreen() {
+	// Only show welcome if no document is loaded and welcome tab doesn't exist
+	if ma.hasWelcomeTab {
+		return
+	}
+
 	// Create a container with the app icon and welcome text
 	iconImage := canvas.NewImageFromResource(resourceIconPng)
 	iconImage.FillMode = canvas.ImageFillOriginal
-	iconImage.Resize(fyne.NewSize(128, 128))
+	iconImage.Resize(fyne.NewSize(96, 96))
 
 	welcomeContent := `
-# 📚 Modern EBook Reader
+# Modern EBook Reader
 
-Welcome to the Modern EBook Reader - a cross-platform application for reading digital books with modern features and intuitive controls.
+**Supported Formats:** PDF, EPUB, MOBI
 
-## ✨ New Features
+**Quick Start:**
+• Click "Open Document" or press Ctrl+O
+• Drag and drop files onto the window
+• Use F1 for complete help and shortcuts
 
-- **Enhanced Navigation**: Mouse wheel scrolling and keyboard shortcuts
-- **Zoom Controls**: Zoom in/out with mouse wheel (Ctrl+wheel) or toolbar buttons
-- **Fit Options**: Fit to page or width for optimal viewing
-- **Modern Interface**: Clean, intuitive design with improved visual hierarchy
-- **Multi-format Support**: PDF, EPUB, and MOBI files
-- **Drag & Drop**: Simply drag files into the window
-- **Comprehensive Help**: Press F1 for complete keyboard shortcuts guide
-
-## 🚀 Getting Started
-
-1. **Open a Document**: Click "Open Document" or drag a file into this window
-2. **Navigate**: Use arrow keys, mouse wheel, or navigation buttons
-3. **Zoom**: Use Ctrl+mouse wheel or zoom buttons for perfect viewing
-4. **Get Help**: Press F1 to see all available shortcuts and features
-
-## 📋 Supported Formats
-
-- **📖 PDF** - High-quality page rendering with zoom support
-- **📄 EPUB** - Reflowable text with proper formatting
-- **📱 MOBI** - Kindle-compatible ebook format
-
-## 🎯 Quick Tips
-
-- **F1** - Show help and keyboard shortcuts
-- **Ctrl+O** - Open document
-- **Arrow keys** - Navigate pages
-- **Ctrl +/-** - Zoom in/out
-- **Ctrl+1/2** - Fit to page/width
-
----
-
-*Drag and drop a file to begin reading, or press F1 for complete help!*
+**Features:**
+• Clean, distraction-free reading
+• Zoom controls and fit modes
+• Keyboard shortcuts and mouse wheel navigation
+• Professional document viewing
 `
 
 	// Create welcome text widget
 	welcomeText := widget.NewRichTextFromMarkdown(welcomeContent)
 	welcomeText.Wrapping = fyne.TextWrapWord
 
-	// Create a container with icon and text
-	welcomeContainer := container.NewVBox(
-		container.NewCenter(iconImage),
-		widget.NewSeparator(),
-		welcomeText,
+	// Create open button
+	openButton := widget.NewButtonWithIcon("Open Document", theme.FolderOpenIcon(), ma.openDocument)
+	openButton.Importance = widget.HighImportance
+
+	// Create help button
+	helpButton := widget.NewButtonWithIcon("Help", theme.HelpIcon(), ma.showHelp)
+
+	buttonContainer := container.NewHBox(
+		openButton,
+		helpButton,
 	)
 
-	// Update the text container content
-	ma.textContainer.Content = welcomeContainer
-	ma.textContainer.Refresh()
+	// Create main welcome container with minimal styling
+	welcomeContainer := container.NewVBox(
+		container.NewCenter(iconImage),
+		welcomeText,
+		container.NewCenter(buttonContainer),
+	)
 
-	// Update tab text
-	if len(ma.contentStack.Items) > 1 {
-		ma.contentStack.Items[1].Text = "📄 Welcome"
-		ma.contentStack.SelectTab(ma.contentStack.Items[1])
+	// Create welcome tab
+	welcomeTab := container.NewTabItem("Welcome", container.NewPadded(welcomeContainer))
+	ma.contentStack.Append(welcomeTab)
+	ma.welcomeTabIndex = len(ma.contentStack.Items) - 1
+	ma.hasWelcomeTab = true
+
+	// Select the welcome tab
+	ma.contentStack.SelectTab(welcomeTab)
+}
+
+// closeWelcomeTab removes the welcome tab when a document is opened
+func (ma *ModernApplication) closeWelcomeTab() {
+	if !ma.hasWelcomeTab || ma.welcomeTabIndex < 0 {
+		return
+	}
+
+	// Remove the welcome tab
+	if ma.welcomeTabIndex < len(ma.contentStack.Items) {
+		ma.contentStack.RemoveIndex(ma.welcomeTabIndex)
+		ma.hasWelcomeTab = false
+		ma.welcomeTabIndex = -1
 	}
 }
 
@@ -424,12 +486,15 @@ func (ma *ModernApplication) loadDocument(filename string) {
 	ma.currentPage = 1
 	doc.SetCurrentPage(1)
 	
+	// Close welcome tab if it exists
+	ma.closeWelcomeTab()
+
 	// Switch to appropriate view
 	ma.switchToDocumentView(doc.GetType())
-	
+
 	// Display the first page
 	ma.displayCurrentPage()
-	
+
 	// Update UI state
 	ma.updateUI()
 }
@@ -439,16 +504,12 @@ func (ma *ModernApplication) switchToDocumentView(docType reader.DocumentType) {
 	switch docType {
 	case reader.TypePDF:
 		if len(ma.contentStack.Items) > 0 {
-			ma.contentStack.Items[0].Text = "📖 Reader (PDF)"
+			ma.contentStack.Items[0].Text = "Reader"
 			ma.contentStack.SelectTab(ma.contentStack.Items[0])
 		}
 	case reader.TypeEPUB, reader.TypeMOBI:
-		formatName := "EPUB"
-		if docType == reader.TypeMOBI {
-			formatName = "MOBI"
-		}
 		if len(ma.contentStack.Items) > 1 {
-			ma.contentStack.Items[1].Text = fmt.Sprintf("📄 Text View (%s)", formatName)
+			ma.contentStack.Items[1].Text = "Text"
 			ma.contentStack.SelectTab(ma.contentStack.Items[1])
 		}
 	}
@@ -1098,11 +1159,10 @@ func (ma *ModernApplication) toggleScrollZoomMode() {
 func (ma *ModernApplication) updateScrollModeStatus() {
 	if len(ma.statusBar.Objects) > 0 {
 		if statusLabel, ok := ma.statusBar.Objects[0].(*widget.Label); ok {
-			baseText := "Ready - Press F1 for help"
 			if ma.scrollZoomMode {
-				statusLabel.SetText(baseText + " | Mouse wheel: Zoom mode")
+				statusLabel.SetText("Mouse wheel: Zoom")
 			} else {
-				statusLabel.SetText(baseText + " | Mouse wheel: Page navigation")
+				statusLabel.SetText("Mouse wheel: Pages")
 			}
 		}
 	}
