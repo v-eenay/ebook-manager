@@ -47,7 +47,7 @@ class WelcomeWidget(QWidget):
         container.setStyleSheet("""
             QFrame {
                 background-color: #FFFFFF;
-                border: 1px solid #E0E0E0;
+                border: 2px solid #CCCCCC;
                 border-radius: 12px;
                 padding: 48px;
             }
@@ -92,7 +92,7 @@ class WelcomeWidget(QWidget):
         else:
             title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("""
-            color: #212121;
+            color: #000000;
             margin: 16px 0px 24px 0px;
             font-weight: 700;
         """)
@@ -112,9 +112,10 @@ class WelcomeWidget(QWidget):
             desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
         desc_label.setStyleSheet("""
-            color: #424242;
+            color: #1A1A1A;
             font-size: 16px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 400;
             line-height: 1.6;
             margin: 16px 0px 32px 0px;
         """)
@@ -155,19 +156,20 @@ class WelcomeWidget(QWidget):
         else:
             formats_label.setAlignment(Qt.AlignCenter)
         formats_label.setStyleSheet("""
-            color: #757575;
+            color: #4A4A4A;
             font-size: 14px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 500;
             margin-top: 24px;
         """)
         container_layout.addWidget(formats_label)
         
         layout.addWidget(container)
         
-        # Set background
+        # Set background with better contrast
         self.setStyleSheet("""
             QWidget {
-                background-color: #F8F9FA;
+                background-color: #F5F5F5;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
         """)

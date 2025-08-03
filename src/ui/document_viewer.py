@@ -44,23 +44,26 @@ class DocumentViewer(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setStyleSheet("""
             QScrollArea {
-                background-color: #F8F9FA;
+                background-color: #F5F5F5;
                 border: none;
             }
             QScrollBar:vertical {
-                background-color: #F8F9FA;
-                width: 12px;
+                background-color: #F0F0F0;
+                width: 14px;
                 border: none;
-                border-radius: 6px;
+                border-radius: 7px;
             }
             QScrollBar::handle:vertical {
-                background-color: #BDBDBD;
-                border-radius: 6px;
-                min-height: 20px;
+                background-color: #757575;
+                border-radius: 7px;
+                min-height: 24px;
                 margin: 2px;
             }
             QScrollBar::handle:vertical:hover {
-                background-color: #9E9E9E;
+                background-color: #424242;
+            }
+            QScrollBar::handle:vertical:pressed {
+                background-color: #212121;
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 border: none;
@@ -82,14 +85,16 @@ class DocumentViewer(QWidget):
         self.content_label.setStyleSheet("""
             QLabel {
                 background-color: #FFFFFF;
-                border: 1px solid #E0E0E0;
-                border-radius: 4px;
-                margin: 16px;
-                padding: 16px;
-                color: #212121;
+                border: 1px solid #D0D0D0;
+                border-radius: 6px;
+                margin: 20px;
+                padding: 24px;
+                color: #1A1A1A;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                font-size: 14px;
+                font-size: 16px;
+                font-weight: 500;
                 line-height: 1.6;
+                text-align: center;
             }
         """)
         self.content_label.setText("No document loaded")
@@ -145,17 +150,18 @@ class DocumentViewer(QWidget):
             else:
                 # Handle text content (for EPUB/MOBI) with better formatting
                 formatted_text = str(page_content)
-                # Ensure good contrast and readability for text content
+                # Ensure excellent contrast and readability for text content
                 self.content_label.setStyleSheet("""
                     QLabel {
                         background-color: #FFFFFF;
-                        border: 1px solid #E0E0E0;
-                        border-radius: 4px;
-                        margin: 16px;
-                        padding: 24px;
-                        color: #212121;
+                        border: 1px solid #C0C0C0;
+                        border-radius: 6px;
+                        margin: 20px;
+                        padding: 32px;
+                        color: #000000;
                         font-family: Georgia, 'Times New Roman', serif;
-                        font-size: 16px;
+                        font-size: 18px;
+                        font-weight: 400;
                         line-height: 1.8;
                         text-align: left;
                     }
@@ -163,17 +169,18 @@ class DocumentViewer(QWidget):
                 self.content_label.setText(formatted_text)
 
         except Exception as e:
-            # Error message with high contrast
+            # Error message with excellent contrast for accessibility
             self.content_label.setStyleSheet("""
                 QLabel {
-                    background-color: #FFF3E0;
-                    border: 1px solid #FFB74D;
-                    border-radius: 4px;
-                    margin: 16px;
+                    background-color: #FFEBEE;
+                    border: 2px solid #F44336;
+                    border-radius: 6px;
+                    margin: 20px;
                     padding: 24px;
-                    color: #E65100;
+                    color: #B71C1C;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     font-size: 16px;
+                    font-weight: 600;
                     line-height: 1.6;
                     text-align: center;
                 }

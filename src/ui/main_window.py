@@ -147,89 +147,94 @@ class MainWindow(QMainWindow):
             /* Main Window - Pure white background with dark text */
             QMainWindow {
                 background-color: #FFFFFF;
-                color: #212121;
+                color: #000000;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
 
-            /* Toolbar - Minimal design with subtle borders */
+            /* Toolbar - Minimal design with clear borders */
             QToolBar {
                 background-color: #FFFFFF;
                 border: none;
-                border-bottom: 1px solid #E0E0E0;
-                spacing: 4px;
-                padding: 8px 12px;
+                border-bottom: 1px solid #CCCCCC;
+                spacing: 6px;
+                padding: 10px 16px;
             }
 
-            /* Toolbar Buttons - Clean, minimal styling */
+            /* Toolbar Buttons - Clean, accessible styling */
             QToolBar QToolButton {
                 background-color: transparent;
                 border: 1px solid transparent;
                 border-radius: 6px;
-                padding: 8px 16px;
-                margin: 0px 2px;
-                color: #212121;
+                padding: 10px 18px;
+                margin: 0px 3px;
+                color: #000000;
                 font-weight: 500;
-                min-height: 20px;
+                font-size: 14px;
+                min-height: 24px;
             }
 
             QToolBar QToolButton:hover {
-                background-color: #F8F9FA;
-                border-color: #E0E0E0;
+                background-color: #F0F0F0;
+                border-color: #CCCCCC;
             }
 
             QToolBar QToolButton:pressed {
-                background-color: #F0F0F0;
-                border-color: #D0D0D0;
+                background-color: #E0E0E0;
+                border-color: #AAAAAA;
             }
 
             QToolBar QToolButton:disabled {
-                color: #9E9E9E;
+                color: #666666;
                 background-color: transparent;
                 border-color: transparent;
             }
 
-            /* Toolbar Labels - High contrast text */
+            /* Toolbar Labels - Excellent contrast text */
             QToolBar QLabel {
-                color: #212121;
-                font-weight: 500;
-                padding: 0px 8px;
+                color: #000000;
+                font-weight: 600;
+                font-size: 14px;
+                padding: 0px 10px;
             }
 
-            /* Tab Widget - Clean, minimal tabs */
+            /* Tab Widget - Clean, accessible tabs */
             QTabWidget::pane {
                 border: none;
                 background-color: #FFFFFF;
-                border-top: 1px solid #E0E0E0;
+                border-top: 2px solid #CCCCCC;
             }
 
             QTabBar::tab {
                 background-color: #FFFFFF;
                 border: none;
-                border-bottom: 2px solid transparent;
-                padding: 12px 20px;
+                border-bottom: 3px solid transparent;
+                padding: 14px 24px;
                 margin-right: 0px;
-                color: #616161;
+                color: #424242;
                 font-weight: 500;
+                font-size: 14px;
             }
 
             QTabBar::tab:selected {
                 background-color: #FFFFFF;
-                border-bottom: 2px solid #1976D2;
-                color: #212121;
+                border-bottom: 3px solid #1976D2;
+                color: #000000;
+                font-weight: 600;
             }
 
             QTabBar::tab:hover:!selected {
-                background-color: #F8F9FA;
-                color: #212121;
+                background-color: #F0F0F0;
+                color: #000000;
             }
 
-            /* Status Bar - Minimal with high contrast */
+            /* Status Bar - Accessible with excellent contrast */
             QStatusBar {
                 background-color: #FFFFFF;
-                border-top: 1px solid #E0E0E0;
-                color: #616161;
-                font-size: 12px;
-                padding: 4px 12px;
+                border-top: 1px solid #CCCCCC;
+                color: #333333;
+                font-size: 13px;
+                font-weight: 500;
+                padding: 6px 16px;
             }
         """)
         
