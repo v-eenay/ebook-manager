@@ -1,22 +1,27 @@
 """
 Welcome Widget
-Displays the welcome screen with file opening options.
+Displays the welcome screen with Fluent Design components.
 """
 
 from pathlib import Path
 
 try:
-    from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                                QPushButton, QFrame, QSizePolicy)
+    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
     from PyQt6.QtCore import Qt, pyqtSignal
     from PyQt6.QtGui import QPixmap, QFont
     QT_VERSION = 6
 except ImportError:
-    from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                                QPushButton, QFrame, QSizePolicy)
+    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
     from PyQt5.QtCore import Qt, pyqtSignal
     from PyQt5.QtGui import QPixmap, QFont
     QT_VERSION = 5
+
+# Fluent Design System imports
+from qfluentwidgets import (
+    CardWidget, PrimaryPushButton, TitleLabel, BodyLabel, CaptionLabel,
+    FluentIcon as FIF, InfoBar, InfoBarPosition, isDarkTheme,
+    StrongBodyLabel, SubtitleLabel, ImageLabel
+)
 
 
 class WelcomeWidget(QWidget):
@@ -41,24 +46,17 @@ class WelcomeWidget(QWidget):
 
         layout.setSpacing(30)
 
-        # Create main container
-        container = QFrame()
+        # Create main Fluent Design card container
+        container = CardWidget()
         container.setMaximumWidth(600)
-        container.setStyleSheet("""
-            QFrame {
-                background-color: #FFFFFF;
-                border: 2px solid #CCCCCC;
-                border-radius: 12px;
-                padding: 48px;
-            }
-        """)
+        container.setMinimumHeight(400)
 
         container_layout = QVBoxLayout(container)
         container_layout.setAlignment(container_layout_alignment)
         container_layout.setSpacing(20)
         
-        # App icon
-        icon_label = QLabel()
+        # App icon with Fluent Design
+        icon_label = ImageLabel()
         icon_path = Path(__file__).parent.parent.parent / "assets" / "icon.png"
         if icon_path.exists():
             pixmap = QPixmap(str(icon_path))
@@ -68,6 +66,7 @@ class WelcomeWidget(QWidget):
                 scaled_pixmap = pixmap.scaled(96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             icon_label.setPixmap(scaled_pixmap)
         else:
+            # Use Fluent Design book icon as fallback
             icon_label.setText("📚")
             icon_label.setStyleSheet("font-size: 48px;")
 
@@ -77,29 +76,16 @@ class WelcomeWidget(QWidget):
             icon_label.setAlignment(Qt.AlignCenter)
         container_layout.addWidget(icon_label)
         
-        # App title
-        title_label = QLabel("Modern EBook Reader")
-        title_font = QFont()
-        title_font.setFamily("-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif")
-        title_font.setPointSize(28)
-        if QT_VERSION == 6:
-            title_font.setWeight(QFont.Weight.Bold)
-        else:
-            title_font.setWeight(QFont.Bold)
-        title_label.setFont(title_font)
+        # App title with Fluent Design typography
+        title_label = TitleLabel("Modern EBook Reader")
         if QT_VERSION == 6:
             title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
             title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("""
-            color: #000000;
-            margin: 16px 0px 24px 0px;
-            font-weight: 700;
-        """)
         container_layout.addWidget(title_label)
         
-        # Description
-        desc_label = QLabel(
+        # Description with Fluent Design typography
+        desc_label = BodyLabel(
             "A clean, minimal ebook reader supporting PDF, EPUB, and MOBI formats.\n\n"
             "• Drag and drop files to open them\n"
             "• Use Ctrl+O to browse for documents\n"
@@ -111,65 +97,22 @@ class WelcomeWidget(QWidget):
         else:
             desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("""
-            color: #1A1A1A;
-            font-size: 16px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-weight: 400;
-            line-height: 1.6;
-            margin: 16px 0px 32px 0px;
-        """)
         container_layout.addWidget(desc_label)
         
-        # Open button
-        open_button = QPushButton("Open Document")
-        open_button.setStyleSheet("""
-            QPushButton {
-                background-color: #1976D2;
-                color: #FFFFFF;
-                border: none;
-                border-radius: 8px;
-                padding: 16px 32px;
-                font-size: 16px;
-                font-weight: 600;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                min-width: 160px;
-            }
-            QPushButton:hover {
-                background-color: #1565C0;
-            }
-            QPushButton:pressed {
-                background-color: #0D47A1;
-            }
-            QPushButton:focus {
-                outline: 2px solid #1976D2;
-                outline-offset: 2px;
-            }
-        """)
+        # Open button with Fluent Design
+        open_button = PrimaryPushButton("Open Document", FIF.FOLDER)
+        open_button.setMinimumWidth(160)
         open_button.clicked.connect(self.open_file_requested.emit)
         container_layout.addWidget(open_button)
         
-        # Supported formats
-        formats_label = QLabel("Supported formats: PDF, EPUB, MOBI")
+        # Supported formats with Fluent Design
+        formats_label = CaptionLabel("Supported formats: PDF, EPUB, MOBI")
         if QT_VERSION == 6:
             formats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
             formats_label.setAlignment(Qt.AlignCenter)
-        formats_label.setStyleSheet("""
-            color: #4A4A4A;
-            font-size: 14px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-weight: 500;
-            margin-top: 24px;
-        """)
         container_layout.addWidget(formats_label)
         
         layout.addWidget(container)
         
-        # Set background with better contrast
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #F5F5F5;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            }
-        """)
+        # Fluent Design background is handled automatically by the framework

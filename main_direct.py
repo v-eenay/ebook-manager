@@ -1,20 +1,14 @@
+#!/usr/bin/env python3
 """
-Clean Main Window for Modern EBook Reader
-Working Fluent Design implementation.
+Direct main application with Fluent Design - bypassing src structure
 """
 
-try:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
-    from PyQt6.QtCore import Qt
-    QT_VERSION = 6
-except ImportError:
-    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
-    from PyQt5.QtCore import Qt
-    QT_VERSION = 5
-
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout
+from PyQt5.QtCore import Qt
 
 class MainWindow(QWidget):
-    """Clean main window with Fluent Design components."""
+    """Direct main window with Fluent Design components."""
     
     def __init__(self):
         super().__init__()
@@ -35,10 +29,7 @@ class MainWindow(QWidget):
         
         # Create title
         title = TitleLabel("Modern EBook Reader")
-        if QT_VERSION == 6:
-            title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
         
         # Create card
@@ -56,3 +47,24 @@ class MainWindow(QWidget):
         
         layout.addWidget(card)
         layout.addStretch()
+
+def main():
+    """Main application entry point."""
+    # Create QApplication first
+    app = QApplication(sys.argv)
+    app.setApplicationName("Modern EBook Reader")
+    
+    # Initialize Fluent Design theme
+    from qfluentwidgets import setTheme, Theme, setThemeColor
+    setTheme(Theme.AUTO)
+    setThemeColor('#0078D4')
+    
+    # Create and show main window
+    window = MainWindow()
+    window.show()
+    
+    print("✅ Fluent Design application started successfully!")
+    sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()

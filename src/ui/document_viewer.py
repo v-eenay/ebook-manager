@@ -1,20 +1,25 @@
 """
 Document Viewer Widget
-Handles the display and interaction with document content.
+Handles the display and interaction with document content using Fluent Design.
 """
 
 try:
-    from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QScrollArea, QLabel, 
-                                QSizePolicy, QFrame)
+    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
     from PyQt6.QtCore import Qt, pyqtSignal, QSize
     from PyQt6.QtGui import QPixmap, QPainter, QWheelEvent, QKeyEvent
     QT_VERSION = 6
 except ImportError:
-    from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QScrollArea, QLabel, 
-                                QSizePolicy, QFrame)
+    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
     from PyQt5.QtCore import Qt, pyqtSignal, QSize
     from PyQt5.QtGui import QPixmap, QPainter
     QT_VERSION = 5
+
+# Fluent Design System imports
+from qfluentwidgets import (
+    ScrollArea, CardWidget, BodyLabel, TitleLabel, SubtitleLabel,
+    ToolButton, FluentIcon as FIF, InfoBar, InfoBarPosition,
+    TransparentToolButton, PrimaryPushButton, isDarkTheme
+)
 
 
 class DocumentViewer(QWidget):
@@ -39,68 +44,37 @@ class DocumentViewer(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        # Create scroll area for document content
-        self.scroll_area = QScrollArea()
+        # Create Fluent Design scroll area for document content
+        self.scroll_area = ScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setStyleSheet("""
-            QScrollArea {
-                background-color: #F5F5F5;
+            ScrollArea {
+                background-color: transparent;
                 border: none;
-            }
-            QScrollBar:vertical {
-                background-color: #F0F0F0;
-                width: 14px;
-                border: none;
-                border-radius: 7px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #757575;
-                border-radius: 7px;
-                min-height: 24px;
-                margin: 2px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #424242;
-            }
-            QScrollBar::handle:vertical:pressed {
-                background-color: #212121;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                border: none;
-                background: none;
             }
         """)
+        # Create Fluent Design card container for document content
+        self.content_card = CardWidget()
+        self.content_card.setMinimumSize(400, 300)
+
+        # Create content layout within the card
+        card_layout = QVBoxLayout(self.content_card)
+        card_layout.setContentsMargins(20, 20, 20, 20)
+
+        # Create content label for displaying pages
+        self.content_label = BodyLabel()
         if QT_VERSION == 6:
-            self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.scroll_area.setFrameStyle(QFrame.Shape.NoFrame)
-            # Create content label for displaying pages
-            self.content_label = QLabel()
             self.content_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
-            self.scroll_area.setAlignment(Qt.AlignCenter)
-            self.scroll_area.setFrameStyle(QFrame.NoFrame)
-            # Create content label for displaying pages
-            self.content_label = QLabel()
             self.content_label.setAlignment(Qt.AlignCenter)
-        self.content_label.setStyleSheet("""
-            QLabel {
-                background-color: #FFFFFF;
-                border: 1px solid #D0D0D0;
-                border-radius: 6px;
-                margin: 20px;
-                padding: 24px;
-                color: #1A1A1A;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                font-size: 16px;
-                font-weight: 500;
-                line-height: 1.6;
-                text-align: center;
-            }
-        """)
         self.content_label.setText("No document loaded")
-        self.content_label.setMinimumSize(400, 300)
-        
-        self.scroll_area.setWidget(self.content_label)
+        self.content_label.setWordWrap(True)
+
+        # Add content label to card layout
+        card_layout.addWidget(self.content_label)
+
+        # Set the card as the scroll area widget
+        self.scroll_area.setWidget(self.content_card)
         layout.addWidget(self.scroll_area)
         
         # Enable mouse wheel events
@@ -148,44 +122,30 @@ class DocumentViewer(QWidget):
                 self.content_label.setPixmap(scaled_pixmap)
                 self.content_label.resize(scaled_pixmap.size())
             else:
-                # Handle text content (for EPUB/MOBI) with better formatting
+                # Handle text content (for EPUB/MOBI) with Fluent Design styling
                 formatted_text = str(page_content)
-                # Ensure excellent contrast and readability for text content
+                self.content_label.setText(formatted_text)
+                # Use Fluent Design body text styling
                 self.content_label.setStyleSheet("""
-                    QLabel {
-                        background-color: #FFFFFF;
-                        border: 1px solid #C0C0C0;
-                        border-radius: 6px;
-                        margin: 20px;
-                        padding: 32px;
-                        color: #000000;
+                    BodyLabel {
                         font-family: Georgia, 'Times New Roman', serif;
                         font-size: 18px;
-                        font-weight: 400;
                         line-height: 1.8;
-                        text-align: left;
+                        padding: 16px;
                     }
                 """)
-                self.content_label.setText(formatted_text)
 
         except Exception as e:
-            # Error message with excellent contrast for accessibility
+            # Error message with Fluent Design error styling
+            error_text = f"Error displaying page: {str(e)}"
+            self.content_label.setText(error_text)
             self.content_label.setStyleSheet("""
-                QLabel {
-                    background-color: #FFEBEE;
-                    border: 2px solid #F44336;
-                    border-radius: 6px;
-                    margin: 20px;
-                    padding: 24px;
-                    color: #B71C1C;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    font-size: 16px;
+                BodyLabel {
+                    color: #D13438;
                     font-weight: 600;
-                    line-height: 1.6;
-                    text-align: center;
+                    padding: 16px;
                 }
             """)
-            self.content_label.setText(f"Error displaying page: {str(e)}")
             
     def previous_page(self):
         """Navigate to the previous page."""

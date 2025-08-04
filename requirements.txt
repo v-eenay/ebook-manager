@@ -3,6 +3,7 @@
 # GUI Framework (choose one)
 PyQt6>=6.4.0
 # PyQt5>=5.15.0  # Alternative if PyQt6 is not available
+PyQt-Fluent-Widgets>=1.8.0  # Microsoft Fluent Design System components
 
 # Document Processing Libraries
 PyMuPDF>=1.23.0        # PDF rendering and processing
