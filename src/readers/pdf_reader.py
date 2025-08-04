@@ -57,32 +57,49 @@ class PDFReader(BaseReader):
             self.close()
             raise Exception(f"Failed to load PDF: {str(e)}")
             
-    def get_page(self, page_index: int) -> QPixmap:
-        """Get a page as a QPixmap for display."""
+    def get_page_data(self, page_index: int) -> bytes:
+        """Get page image data for display."""
         if not self.is_loaded or not self.document:
             raise RuntimeError("No document loaded")
-            
+
         if page_index < 0 or page_index >= self.page_count:
             raise IndexError(f"Page index {page_index} out of range (0-{self.page_count-1})")
-            
+
         try:
             # Get the page
             page = self.document[page_index]
-            
+
             # Render the page to a pixmap
             # Use a reasonable DPI for good quality
             mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for better quality
             pix = page.get_pixmap(matrix=mat)
-            
-            # Convert to QPixmap
+
+            # Return raw image data instead of QPixmap
             img_data = pix.tobytes("ppm")
-            qimg = QImage.fromData(img_data)
-            pixmap = QPixmap.fromImage(qimg)
-            
-            return pixmap
-            
+            return img_data
+
         except Exception as e:
             raise Exception(f"Failed to render page {page_index}: {str(e)}")
+
+    def get_page(self, page_index: int) -> QPixmap:
+        """Get a page as a QPixmap for display (safe version)."""
+        try:
+            # Get image data first
+            img_data = self.get_page_data(page_index)
+
+            # Create QPixmap only when called from main thread with QGuiApplication
+            qimg = QImage.fromData(img_data)
+            if qimg.isNull():
+                raise Exception("Failed to create QImage from data")
+
+            pixmap = QPixmap.fromImage(qimg)
+            if pixmap.isNull():
+                raise Exception("Failed to create QPixmap from QImage")
+
+            return pixmap
+
+        except Exception as e:
+            raise Exception(f"Failed to create page pixmap {page_index}: {str(e)}")
             
     def get_page_count(self) -> int:
         """Get the total number of pages."""

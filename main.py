@@ -247,6 +247,7 @@ class MainWindow(QWidget):
 
         # Add separator
         separator1 = QWidget()
+        separator1.setObjectName("separator")
         separator1.setFixedWidth(1)
         separator1.setStyleSheet("background-color: #D0D0D0;")
         ribbon_layout.addWidget(separator1)
@@ -261,6 +262,7 @@ class MainWindow(QWidget):
 
         # Add separator
         separator2 = QWidget()
+        separator2.setObjectName("separator")
         separator2.setFixedWidth(1)
         separator2.setStyleSheet("background-color: #D0D0D0;")
         ribbon_layout.addWidget(separator2)
@@ -362,6 +364,24 @@ class MainWindow(QWidget):
         section_layout.addLayout(buttons_container)
         return section_widget
 
+    def safe_create_pixmap(self, *args):
+        """Safely create a QPixmap, handling QGuiApplication issues."""
+        try:
+            # Check if QGuiApplication is available
+            app = QApplication.instance()
+            if app is None:
+                raise RuntimeError("No QApplication instance available")
+
+            # Create QPixmap
+            if args:
+                return QPixmap(*args)
+            else:
+                return QPixmap()
+
+        except Exception as e:
+            print(f"Warning: Could not create QPixmap: {e}")
+            return None
+
     def apply_comprehensive_styling(self):
         """Apply comprehensive styling to ensure visibility in all themes."""
         from qfluentwidgets import isDarkTheme
@@ -402,73 +422,163 @@ class MainWindow(QWidget):
             }
         """
 
-        # Apply theme-specific overrides with improved contrast
+        # Apply theme-specific overrides with comprehensive component coverage
         if isDarkTheme():
             global_style += """
+                /* Main window and widgets */
                 QWidget {
                     background-color: #1E1E1E;
                     color: #FFFFFF;
                 }
+
+                /* All label types */
                 QLabel {
                     color: #FFFFFF;
-                }
-                CardWidget {
-                    background-color: #2D2D2D;
-                    border: 2px solid #404040;
+                    background-color: transparent;
                 }
                 TitleLabel {
                     color: #FFFFFF !important;
+                    background-color: transparent !important;
                 }
                 BodyLabel {
                     color: #E0E0E0 !important;
+                    background-color: transparent !important;
                 }
                 CaptionLabel {
                     color: #B0B0B0 !important;
+                    background-color: transparent !important;
                 }
+
+                /* Card widgets */
+                CardWidget {
+                    background-color: #2D2D2D !important;
+                    border: 2px solid #404040 !important;
+                    color: #FFFFFF !important;
+                }
+
+                /* Scroll areas and document display */
                 QScrollArea {
                     background-color: #1E1E1E;
                     border: 1px solid #404040;
                 }
                 QScrollArea QLabel {
-                    background-color: #2D2D2D;
-                    border: 1px solid #404040;
-                    color: #E0E0E0;
+                    background-color: #2D2D2D !important;
+                    border: 1px solid #404040 !important;
+                    color: #E0E0E0 !important;
+                }
+
+                /* Buttons */
+                PrimaryPushButton {
+                    background-color: #0078D4 !important;
+                    color: #FFFFFF !important;
+                    border: none !important;
+                }
+                PrimaryPushButton:hover {
+                    background-color: #106EBE !important;
+                }
+
+                /* Ribbon toolbar */
+                ToolButton {
+                    background-color: transparent !important;
+                    color: #E0E0E0 !important;
+                    border: 1px solid transparent !important;
+                }
+                ToolButton:hover {
+                    background-color: #404040 !important;
+                    border: 1px solid #555555 !important;
+                }
+
+                /* Separators */
+                QWidget[objectName="separator"] {
+                    background-color: #404040 !important;
                 }
             """
         else:
             global_style += """
+                /* Main window and widgets */
                 QWidget {
                     background-color: #F8F8F8;
                     color: #000000;
                 }
+
+                /* All label types */
                 QLabel {
                     color: #000000;
-                }
-                CardWidget {
-                    background-color: #FFFFFF;
-                    border: 2px solid #E0E0E0;
+                    background-color: transparent;
                 }
                 TitleLabel {
                     color: #000000 !important;
+                    background-color: transparent !important;
                 }
                 BodyLabel {
                     color: #333333 !important;
+                    background-color: transparent !important;
                 }
                 CaptionLabel {
                     color: #666666 !important;
+                    background-color: transparent !important;
                 }
+
+                /* Card widgets */
+                CardWidget {
+                    background-color: #FFFFFF !important;
+                    border: 2px solid #E0E0E0 !important;
+                    color: #000000 !important;
+                }
+
+                /* Scroll areas and document display */
                 QScrollArea {
                     background-color: #F8F8F8;
                     border: 1px solid #E0E0E0;
                 }
                 QScrollArea QLabel {
-                    background-color: #FFFFFF;
-                    border: 1px solid #E0E0E0;
-                    color: #333333;
+                    background-color: #FFFFFF !important;
+                    border: 1px solid #E0E0E0 !important;
+                    color: #333333 !important;
+                }
+
+                /* Buttons */
+                PrimaryPushButton {
+                    background-color: #0078D4 !important;
+                    color: #FFFFFF !important;
+                    border: none !important;
+                }
+                PrimaryPushButton:hover {
+                    background-color: #106EBE !important;
+                }
+
+                /* Ribbon toolbar */
+                ToolButton {
+                    background-color: transparent !important;
+                    color: #333333 !important;
+                    border: 1px solid transparent !important;
+                }
+                ToolButton:hover {
+                    background-color: #E8E8E8 !important;
+                    border: 1px solid #D0D0D0 !important;
+                }
+
+                /* Separators */
+                QWidget[objectName="separator"] {
+                    background-color: #D0D0D0 !important;
                 }
             """
 
         self.setStyleSheet(global_style)
+
+        # Force update all child widgets
+        self.update_all_widgets()
+
+    def update_all_widgets(self):
+        """Force update all child widgets to apply new theme."""
+        # Update all child widgets recursively
+        for widget in self.findChildren(QWidget):
+            widget.update()
+            widget.repaint()
+
+        # Update main window
+        self.update()
+        self.repaint()
 
     def open_file(self):
         """Open a document file."""
@@ -496,21 +606,33 @@ class MainWindow(QWidget):
             if not self.document_manager:
                 self.document_manager = DocumentManager()
 
+            # Verify file exists and is supported
+            if not Path(file_path).exists():
+                raise FileNotFoundError(f"File not found: {file_path}")
+
+            if not self.document_manager.is_supported(file_path):
+                raise ValueError(f"Unsupported file format: {Path(file_path).suffix}")
+
             # Load the document
             self.current_document = self.document_manager.load_document(file_path)
             self.current_page = 0
 
-            # Display the document
-            self.display_current_page()
+            # Verify document loaded successfully
+            if not self.current_document:
+                raise RuntimeError("Document loaded but returned None")
 
-            # Switch to document view
+            # Switch to document view first
             self.stacked_widget.setCurrentIndex(1)
 
+            # Display the document (this will handle QPixmap creation safely)
+            self.display_current_page()
+
             # Show success message
+            page_count = getattr(self.current_document, 'page_count', 'unknown')
             info_bar = InfoBar(
                 icon=InfoBarIcon.SUCCESS,
                 title="Document Loaded",
-                content=f"Successfully opened: {Path(file_path).name}",
+                content=f"Successfully opened: {Path(file_path).name} ({page_count} pages)",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 duration=3000,
@@ -519,17 +641,25 @@ class MainWindow(QWidget):
             info_bar.show()
 
         except Exception as e:
-            # Show error message
+            # Show detailed error message
+            error_msg = str(e)
+            if "QPixmap" in error_msg or "QGuiApplication" in error_msg:
+                error_msg = "Graphics initialization error. Please restart the application and try again."
+
             info_bar = InfoBar(
                 icon=InfoBarIcon.ERROR,
                 title="Error Loading Document",
-                content=f"Failed to load document: {str(e)}",
+                content=f"Failed to load document: {error_msg}",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 duration=5000,
                 parent=self
             )
             info_bar.show()
+
+            # Reset state on error
+            self.current_document = None
+            self.current_page = 0
 
     def display_current_page(self):
         """Display the current page of the document."""
@@ -539,38 +669,46 @@ class MainWindow(QWidget):
         try:
             # For PDF documents, get the page as a pixmap
             if hasattr(self.current_document, 'get_page'):
-                pixmap = self.current_document.get_page(self.current_page)
-                self.document_label.setPixmap(pixmap)
-                self.document_label.setText("")
+                try:
+                    # Safely create QPixmap in main thread
+                    pixmap = self.current_document.get_page(self.current_page)
+                    self.document_label.setPixmap(pixmap)
+                    self.document_label.setText("")
 
-                # Update window title and page info
-                page_count = self.current_document.get_page_count()
-                self.setWindowTitle(f"Modern EBook Reader - Page {self.current_page + 1} of {page_count}")
-                self.update_page_info()
+                    # Update window title and page info
+                    page_count = self.current_document.get_page_count()
+                    self.setWindowTitle(f"Modern EBook Reader - Page {self.current_page + 1} of {page_count}")
+                    self.update_page_info()
+
+                except Exception as pixmap_error:
+                    # Fallback to text display if QPixmap creation fails
+                    error_text = f"Error rendering page {self.current_page + 1}: {str(pixmap_error)}\n\nTry using a different document format or restart the application."
+                    self.document_label.setText(error_text)
+                    self.document_label.setPixmap(QPixmap())  # Clear any existing pixmap
+                    self.document_label.setWordWrap(True)
+                    self.document_label.setAlignment(Qt.AlignCenter)
 
             # For text-based documents (EPUB, MOBI), get text content
             elif hasattr(self.current_document, 'get_page_text'):
                 text = self.current_document.get_page_text(self.current_page)
                 self.document_label.setText(text)
-                self.document_label.setPixmap(QPixmap())  # Clear any existing pixmap
+                # Only clear pixmap if we can safely create an empty one
+                empty_pixmap = self.safe_create_pixmap()
+                if empty_pixmap is not None:
+                    self.document_label.setPixmap(empty_pixmap)
 
                 # Update styling for text display
-                self.document_label.setStyleSheet("""
-                    QLabel {
-                        background-color: #FFFFFF;
-                        border: 1px solid #E0E0E0;
-                        padding: 30px;
-                        font-size: 14px;
-                        color: #333333;
-                        line-height: 1.6;
-                    }
-                """)
+                self.update_document_styling()
                 self.document_label.setWordWrap(True)
                 self.document_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
         except Exception as e:
-            self.document_label.setText(f"Error displaying page: {str(e)}")
-            self.document_label.setPixmap(QPixmap())
+            error_text = f"Error displaying page: {str(e)}"
+            self.document_label.setText(error_text)
+            # Only clear pixmap if we can safely create an empty one
+            empty_pixmap = self.safe_create_pixmap()
+            if empty_pixmap is not None:
+                self.document_label.setPixmap(empty_pixmap)
 
     def toggle_theme(self):
         """Toggle between light and dark themes."""
@@ -605,28 +743,52 @@ class MainWindow(QWidget):
         """Update document display styling based on current theme."""
         from qfluentwidgets import isDarkTheme
 
+        if not hasattr(self, 'document_label'):
+            return
+
         if isDarkTheme():
             self.document_label.setStyleSheet("""
                 QLabel {
-                    background-color: #2D2D2D;
-                    border: 1px solid #404040;
+                    background-color: #2D2D2D !important;
+                    border: 1px solid #404040 !important;
                     padding: 30px;
                     font-size: 14px;
-                    color: #E0E0E0;
+                    color: #E0E0E0 !important;
                     line-height: 1.6;
                 }
             """)
+            # Update scroll area styling
+            if hasattr(self, 'document_scroll'):
+                self.document_scroll.setStyleSheet("""
+                    QScrollArea {
+                        background-color: #1E1E1E !important;
+                        border: 1px solid #404040 !important;
+                    }
+                """)
         else:
             self.document_label.setStyleSheet("""
                 QLabel {
-                    background-color: #FFFFFF;
-                    border: 1px solid #E0E0E0;
+                    background-color: #FFFFFF !important;
+                    border: 1px solid #E0E0E0 !important;
                     padding: 30px;
                     font-size: 14px;
-                    color: #333333;
+                    color: #333333 !important;
                     line-height: 1.6;
                 }
             """)
+            # Update scroll area styling
+            if hasattr(self, 'document_scroll'):
+                self.document_scroll.setStyleSheet("""
+                    QScrollArea {
+                        background-color: #F8F8F8 !important;
+                        border: 1px solid #E0E0E0 !important;
+                    }
+                """)
+
+        # Force update
+        self.document_label.update()
+        if hasattr(self, 'document_scroll'):
+            self.document_scroll.update()
 
     def close_document(self):
         """Close the current document and return to home."""
