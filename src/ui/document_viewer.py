@@ -1,242 +1,222 @@
 """
-Document Viewer Widget
-Handles the display and interaction with document content using Fluent Design.
+Document Viewer Widget for Modern EBook Reader
+Handles proper display of PDF, EPUB, and MOBI documents with Qt graphics.
 """
 
 try:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
-    from PyQt6.QtCore import Qt, pyqtSignal, QSize
-    from PyQt6.QtGui import QPixmap, QPainter, QWheelEvent, QKeyEvent
+    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
+    from PyQt6.QtCore import Qt
     QT_VERSION = 6
 except ImportError:
-    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
-    from PyQt5.QtCore import Qt, pyqtSignal, QSize
-    from PyQt5.QtGui import QPixmap, QPainter
+    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
+    from PyQt5.QtCore import Qt
     QT_VERSION = 5
 
-# Fluent Design System imports
-from qfluentwidgets import (
-    ScrollArea, CardWidget, BodyLabel, TitleLabel, SubtitleLabel,
-    ToolButton, FluentIcon as FIF, InfoBar, InfoBarPosition,
-    TransparentToolButton, PrimaryPushButton, isDarkTheme
-)
+# Lazy import QPixmap and QImage to avoid early initialization issues
+def _get_qt_graphics():
+    """Get QPixmap and QImage classes when needed."""
+    if QT_VERSION == 6:
+        from PyQt6.QtGui import QPixmap, QImage
+    else:
+        from PyQt5.QtGui import QPixmap, QImage
+    return QPixmap, QImage
 
 
 class DocumentViewer(QWidget):
-    """Widget for displaying document content with zoom and navigation."""
-    
-    # Signals
-    page_changed = pyqtSignal(int, int)  # current_page, total_pages
-    zoom_changed = pyqtSignal(float)     # zoom_level
-    
-    def __init__(self):
-        super().__init__()
-        self.document = None
-        self.current_page = 1
-        self.zoom_level = 1.0
-        self.min_zoom = 0.25
-        self.max_zoom = 5.0
-        
+    """Widget for displaying documents with proper Qt graphics handling."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.current_document = None
+        self.current_page = 0
         self.init_ui()
         
     def init_ui(self):
         """Initialize the document viewer UI."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Create Fluent Design scroll area for document content
-        self.scroll_area = ScrollArea()
+
+        # Create scroll area for document display
+        self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setStyleSheet("""
-            ScrollArea {
-                background-color: transparent;
-                border: none;
+        self.scroll_area.setAlignment(Qt.AlignCenter)
+
+        # Create label for document content
+        self.document_label = QLabel()
+        self.document_label.setAlignment(Qt.AlignCenter)
+        self.document_label.setStyleSheet("""
+            QLabel {
+                background-color: #FFFFFF;
+                border: 1px solid #E0E0E0;
+                padding: 20px;
+                font-size: 16px;
+                color: #666666;
             }
         """)
-        # Create Fluent Design card container for document content
-        self.content_card = CardWidget()
-        self.content_card.setMinimumSize(400, 300)
+        self.document_label.setText("No document loaded")
 
-        # Create content layout within the card
-        card_layout = QVBoxLayout(self.content_card)
-        card_layout.setContentsMargins(20, 20, 20, 20)
-
-        # Create content label for displaying pages
-        self.content_label = BodyLabel()
-        if QT_VERSION == 6:
-            self.content_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            self.content_label.setAlignment(Qt.AlignCenter)
-        self.content_label.setText("No document loaded")
-        self.content_label.setWordWrap(True)
-
-        # Add content label to card layout
-        card_layout.addWidget(self.content_label)
-
-        # Set the card as the scroll area widget
-        self.scroll_area.setWidget(self.content_card)
+        self.scroll_area.setWidget(self.document_label)
         layout.addWidget(self.scroll_area)
-        
-        # Enable mouse wheel events
-        if QT_VERSION == 6:
-            self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        else:
-            self.setFocusPolicy(Qt.StrongFocus)
-        
-    def set_document(self, document):
-        """Set the document to display."""
-        self.document = document
-        self.current_page = 1
-        self.zoom_level = 1.0
-        
-        if document:
-            self.display_current_page()
-            self.page_changed.emit(self.current_page, document.get_page_count())
-            self.zoom_changed.emit(self.zoom_level)
-        else:
-            self.content_label.setText("No document loaded")
-            
+
+    def load_document(self, document):
+        """Load a document for display."""
+        self.current_document = document
+        self.current_page = 0
+        self.display_current_page()
+
     def display_current_page(self):
         """Display the current page of the document."""
-        if not self.document:
+        if not self.current_document:
+            self.document_label.setText("No document loaded")
             return
-            
+
         try:
-            # Get the page content (this will be implemented by document readers)
-            page_content = self.document.get_page(self.current_page - 1)  # 0-based indexing
-            
-            if isinstance(page_content, QPixmap):
-                # Scale the pixmap according to zoom level
-                if QT_VERSION == 6:
-                    scaled_pixmap = page_content.scaled(
-                        page_content.size() * self.zoom_level,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation
-                    )
-                else:
-                    scaled_pixmap = page_content.scaled(
-                        page_content.size() * self.zoom_level,
-                        Qt.KeepAspectRatio,
-                        Qt.SmoothTransformation
-                    )
-                self.content_label.setPixmap(scaled_pixmap)
-                self.content_label.resize(scaled_pixmap.size())
+            # Handle PDF documents
+            if hasattr(self.current_document, 'get_page_image_data'):
+                self.display_pdf_page()
+            # Handle text-based documents (EPUB, MOBI)
+            elif hasattr(self.current_document, 'get_page_text'):
+                self.display_text_page()
             else:
-                # Handle text content (for EPUB/MOBI) with Fluent Design styling
-                formatted_text = str(page_content)
-                self.content_label.setText(formatted_text)
-                # Use Fluent Design body text styling
-                self.content_label.setStyleSheet("""
-                    BodyLabel {
-                        font-family: Georgia, 'Times New Roman', serif;
-                        font-size: 18px;
-                        line-height: 1.8;
-                        padding: 16px;
-                    }
-                """)
+                self.document_label.setText("Document format not supported for display")
 
         except Exception as e:
-            # Error message with Fluent Design error styling
-            error_text = f"Error displaying page: {str(e)}"
-            self.content_label.setText(error_text)
-            self.content_label.setStyleSheet("""
-                BodyLabel {
-                    color: #D13438;
-                    font-weight: 600;
-                    padding: 16px;
+            self.document_label.setText(f"Error displaying page: {str(e)}")
+
+    def display_pdf_page(self):
+        """Display a PDF page as an image."""
+        try:
+            # Get Qt graphics classes
+            QPixmap, QImage = _get_qt_graphics()
+
+            # Get image data and dimensions from PDF reader
+            img_data, width, height = self.current_document.get_page_image_data(self.current_page)
+
+            # Create QImage from raw data
+            qimg = QImage.fromData(img_data)
+            if qimg.isNull():
+                raise Exception("Failed to create QImage from PDF data")
+
+            # Create QPixmap from QImage
+            pixmap = QPixmap.fromImage(qimg)
+            if pixmap.isNull():
+                raise Exception("Failed to create QPixmap from QImage")
+
+            # Display the pixmap
+            self.document_label.setPixmap(pixmap)
+            self.document_label.setText("")
+
+            # Update styling for image display
+            self.document_label.setStyleSheet("""
+                QLabel {
+                    background-color: #F8F8F8;
+                    border: 1px solid #E0E0E0;
+                    padding: 10px;
                 }
             """)
-            
+
+        except Exception as e:
+            # Fallback to error message
+            self.document_label.setText(f"Error rendering PDF page: {str(e)}")
+            try:
+                QPixmap, _ = _get_qt_graphics()
+                self.document_label.setPixmap(QPixmap())  # Clear any existing pixmap
+            except:
+                pass  # Ignore pixmap clearing errors
+
+    def display_text_page(self):
+        """Display a text-based page (EPUB, MOBI)."""
+        try:
+            # Get text content
+            text = self.current_document.get_page_text(self.current_page)
+
+            # Display text
+            self.document_label.setText(text)
+            # Clear any existing pixmap
+            try:
+                QPixmap, _ = _get_qt_graphics()
+                self.document_label.setPixmap(QPixmap())
+            except:
+                pass  # Ignore pixmap clearing errors
+            self.document_label.setWordWrap(True)
+            self.document_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+
+            # Update styling for text display
+            self.document_label.setStyleSheet("""
+                QLabel {
+                    background-color: #FFFFFF;
+                    border: 1px solid #E0E0E0;
+                    padding: 30px;
+                    font-size: 14px;
+                    color: #333333;
+                    line-height: 1.6;
+                }
+            """)
+
+        except Exception as e:
+            self.document_label.setText(f"Error reading text: {str(e)}")
+
+    def next_page(self):
+        """Go to the next page."""
+        if self.current_document and hasattr(self.current_document, 'get_page_count'):
+            page_count = self.current_document.get_page_count()
+            if self.current_page < page_count - 1:
+                self.current_page += 1
+                self.display_current_page()
+                return True
+        return False
+
     def previous_page(self):
-        """Navigate to the previous page."""
-        if self.document and self.current_page > 1:
+        """Go to the previous page."""
+        if self.current_document and self.current_page > 0:
             self.current_page -= 1
             self.display_current_page()
-            self.page_changed.emit(self.current_page, self.document.get_page_count())
-            
-    def next_page(self):
-        """Navigate to the next page."""
-        if self.document and self.current_page < self.document.get_page_count():
-            self.current_page += 1
-            self.display_current_page()
-            self.page_changed.emit(self.current_page, self.document.get_page_count())
-            
-    def zoom_in(self):
-        """Increase zoom level."""
-        if self.zoom_level < self.max_zoom:
-            self.zoom_level = min(self.zoom_level * 1.2, self.max_zoom)
-            self.display_current_page()
-            self.zoom_changed.emit(self.zoom_level)
-            
-    def zoom_out(self):
-        """Decrease zoom level."""
-        if self.zoom_level > self.min_zoom:
-            self.zoom_level = max(self.zoom_level / 1.2, self.min_zoom)
-            self.display_current_page()
-            self.zoom_changed.emit(self.zoom_level)
-            
-    def set_zoom(self, zoom_level):
-        """Set specific zoom level."""
-        self.zoom_level = max(self.min_zoom, min(zoom_level, self.max_zoom))
-        self.display_current_page()
-        self.zoom_changed.emit(self.zoom_level)
-        
-    def wheelEvent(self, event):
-        """Handle mouse wheel events for zooming and navigation."""
-        if QT_VERSION == 6:
-            delta = event.angleDelta().y()
-            modifiers = event.modifiers()
-        else:
-            delta = event.delta()
-            modifiers = event.modifiers()
-            
-        ctrl_modifier = Qt.KeyboardModifier.ControlModifier if QT_VERSION == 6 else Qt.ControlModifier
-        if modifiers & ctrl_modifier:
-            # Zoom with Ctrl+wheel
-            if delta > 0:
-                self.zoom_in()
-            else:
-                self.zoom_out()
-        else:
-            # Page navigation with wheel
-            if delta > 0:
-                self.previous_page()
-            else:
-                self.next_page()
-                
-    def keyPressEvent(self, event):
-        """Handle key press events."""
-        key = event.key()
-        
-        # Define key constants for compatibility
-        if QT_VERSION == 6:
-            key_left = Qt.Key.Key_Left
-            key_right = Qt.Key.Key_Right
-            key_pageup = Qt.Key.Key_PageUp
-            key_pagedown = Qt.Key.Key_PageDown
-            key_home = Qt.Key.Key_Home
-            key_end = Qt.Key.Key_End
-        else:
-            key_left = Qt.Key_Left
-            key_right = Qt.Key_Right
-            key_pageup = Qt.Key_PageUp
-            key_pagedown = Qt.Key_PageDown
-            key_home = Qt.Key_Home
-            key_end = Qt.Key_End
+            return True
+        return False
 
-        if key == key_left or key == key_pageup:
-            self.previous_page()
-        elif key == key_right or key == key_pagedown:
-            self.next_page()
-        elif key == key_home:
-            if self.document:
-                self.current_page = 1
-                self.display_current_page()
-                self.page_changed.emit(self.current_page, self.document.get_page_count())
-        elif key == key_end:
-            if self.document:
-                self.current_page = self.document.get_page_count()
-                self.display_current_page()
-                self.page_changed.emit(self.current_page, self.document.get_page_count())
+    def get_current_page(self):
+        """Get the current page number (1-based)."""
+        return self.current_page + 1
+
+    def get_page_count(self):
+        """Get the total number of pages."""
+        if self.current_document and hasattr(self.current_document, 'get_page_count'):
+            return self.current_document.get_page_count()
+        return 0
+
+    def update_theme_styling(self, is_dark_theme=False):
+        """Update styling based on theme."""
+        if is_dark_theme:
+            self.document_label.setStyleSheet("""
+                QLabel {
+                    background-color: #2D2D2D;
+                    border: 1px solid #404040;
+                    padding: 20px;
+                    font-size: 14px;
+                    color: #E0E0E0;
+                    line-height: 1.6;
+                }
+            """)
+            self.scroll_area.setStyleSheet("""
+                QScrollArea {
+                    background-color: #1E1E1E;
+                    border: 1px solid #404040;
+                }
+            """)
         else:
-            super().keyPressEvent(event)
+            self.document_label.setStyleSheet("""
+                QLabel {
+                    background-color: #FFFFFF;
+                    border: 1px solid #E0E0E0;
+                    padding: 20px;
+                    font-size: 14px;
+                    color: #333333;
+                    line-height: 1.6;
+                }
+            """)
+            self.scroll_area.setStyleSheet("""
+                QScrollArea {
+                    background-color: #F8F8F8;
+                    border: 1px solid #E0E0E0;
+                }
+            """)

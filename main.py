@@ -8,7 +8,7 @@ from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                             QFileDialog, QLabel, QScrollArea, QStackedWidget)
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+# QPixmap import moved to safe_create_pixmap method to avoid early initialization
 
 # Add the src directory to the Python path
 src_path = Path(__file__).parent / "src"
@@ -194,27 +194,21 @@ class MainWindow(QWidget):
         # Create ribbon toolbar
         self.create_ribbon_toolbar(layout)
 
-        # Create document display area
-        self.document_scroll = QScrollArea()
-        self.document_scroll.setWidgetResizable(True)
-        self.document_scroll.setAlignment(Qt.AlignCenter)
-
-        self.document_label = QLabel("No document loaded")
-        self.document_label.setAlignment(Qt.AlignCenter)
-        self.document_label.setStyleSheet("""
-            QLabel {
-                background-color: #FFFFFF;
-                border: 1px solid #E0E0E0;
-                padding: 20px;
-                font-size: 16px;
-                color: #666666;
-            }
-        """)
-
-        self.document_scroll.setWidget(self.document_label)
-        layout.addWidget(self.document_scroll)
+        # Create document viewer widget (lazy import to avoid early widget creation)
+        self.document_viewer = None
+        self.document_viewer_container = QWidget()
+        self.document_viewer_layout = QVBoxLayout(self.document_viewer_container)
+        self.document_viewer_layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.document_viewer_container)
 
         self.stacked_widget.addWidget(document_widget)
+
+    def ensure_document_viewer(self):
+        """Ensure document viewer is created when needed."""
+        if self.document_viewer is None:
+            from ui.document_viewer import DocumentViewer
+            self.document_viewer = DocumentViewer()
+            self.document_viewer_layout.addWidget(self.document_viewer)
 
     def create_ribbon_toolbar(self, parent_layout):
         """Create Microsoft Office-style ribbon toolbar."""
@@ -370,16 +364,29 @@ class MainWindow(QWidget):
             # Check if QGuiApplication is available
             app = QApplication.instance()
             if app is None:
-                raise RuntimeError("No QApplication instance available")
+                return None
+
+            # Check if the application is properly initialized
+            if not hasattr(app, 'exec'):
+                return None
+
+            # Import QPixmap only when safe
+            from PyQt5.QtGui import QPixmap
 
             # Create QPixmap
             if args:
-                return QPixmap(*args)
+                pixmap = QPixmap(*args)
             else:
-                return QPixmap()
+                pixmap = QPixmap()
+
+            # Verify the pixmap was created successfully
+            if pixmap.isNull():
+                return None
+
+            return pixmap
 
         except Exception as e:
-            print(f"Warning: Could not create QPixmap: {e}")
+            # Silently handle errors to prevent crashes
             return None
 
     def apply_comprehensive_styling(self):
@@ -596,11 +603,11 @@ class MainWindow(QWidget):
             self.load_document(file_path)
 
     def load_document(self, file_path):
-        """Load and display a document."""
-        from qfluentwidgets import InfoBar, InfoBarIcon
-
+        """Load and display a document with comprehensive error handling."""
         try:
-            # Import document manager
+            from qfluentwidgets import InfoBar, InfoBarIcon
+
+            # Import document manager safely
             from readers.document_manager import DocumentManager
 
             if not self.document_manager:
@@ -613,57 +620,85 @@ class MainWindow(QWidget):
             if not self.document_manager.is_supported(file_path):
                 raise ValueError(f"Unsupported file format: {Path(file_path).suffix}")
 
-            # Load the document
-            self.current_document = self.document_manager.load_document(file_path)
-            self.current_page = 0
+            # Load the document with error handling
+            try:
+                self.current_document = self.document_manager.load_document(file_path)
+                self.current_page = 0
 
-            # Verify document loaded successfully
-            if not self.current_document:
-                raise RuntimeError("Document loaded but returned None")
+                # Verify document loaded successfully
+                if not self.current_document:
+                    raise RuntimeError("Document loaded but returned None")
+
+            except Exception as load_error:
+                raise RuntimeError(f"Failed to load document: {str(load_error)}")
 
             # Switch to document view first
             self.stacked_widget.setCurrentIndex(1)
 
-            # Display the document (this will handle QPixmap creation safely)
-            self.display_current_page()
+            # Ensure document viewer is created and load document
+            try:
+                self.ensure_document_viewer()
+                self.document_viewer.load_document(self.current_document)
+                self.update_page_info()
+            except Exception as display_error:
+                # If display fails, show error message
+                print(f"Error displaying document: {display_error}")
 
             # Show success message
-            page_count = getattr(self.current_document, 'page_count', 'unknown')
-            info_bar = InfoBar(
-                icon=InfoBarIcon.SUCCESS,
-                title="Document Loaded",
-                content=f"Successfully opened: {Path(file_path).name} ({page_count} pages)",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                duration=3000,
-                parent=self
-            )
-            info_bar.show()
+            try:
+                page_count = getattr(self.current_document, 'page_count', 'unknown')
+                if hasattr(self.current_document, 'get_page_count'):
+                    page_count = self.current_document.get_page_count()
+
+                info_bar = InfoBar(
+                    icon=InfoBarIcon.SUCCESS,
+                    title="Document Loaded",
+                    content=f"Successfully opened: {Path(file_path).name} ({page_count} pages)",
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    duration=3000,
+                    parent=self
+                )
+                info_bar.show()
+            except:
+                # If info bar fails, continue silently
+                pass
 
         except Exception as e:
-            # Show detailed error message
-            error_msg = str(e)
-            if "QPixmap" in error_msg or "QGuiApplication" in error_msg:
-                error_msg = "Graphics initialization error. Please restart the application and try again."
+            # Comprehensive error handling
+            try:
+                from qfluentwidgets import InfoBar, InfoBarIcon
 
-            info_bar = InfoBar(
-                icon=InfoBarIcon.ERROR,
-                title="Error Loading Document",
-                content=f"Failed to load document: {error_msg}",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                duration=5000,
-                parent=self
-            )
-            info_bar.show()
+                error_msg = str(e)
+                if "QPixmap" in error_msg or "QGuiApplication" in error_msg:
+                    error_msg = "Graphics initialization error. Please restart the application and try again."
+                elif "FileNotFoundError" in str(type(e)):
+                    error_msg = "File not found. Please check the file path and try again."
+                elif "ValueError" in str(type(e)):
+                    error_msg = "Unsupported file format. Please select a PDF, EPUB, or MOBI file."
+
+                info_bar = InfoBar(
+                    icon=InfoBarIcon.ERROR,
+                    title="Error Loading Document",
+                    content=f"Failed to load document: {error_msg}",
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    duration=5000,
+                    parent=self
+                )
+                info_bar.show()
+            except:
+                # If even error display fails, print to console
+                print(f"Error loading document: {e}")
 
             # Reset state on error
             self.current_document = None
             self.current_page = 0
 
     def display_current_page(self):
-        """Display the current page of the document."""
+        """Display the current page of the document with comprehensive error handling."""
         if not self.current_document:
+            self.document_label.setText("No document loaded")
             return
 
         try:
@@ -672,43 +707,74 @@ class MainWindow(QWidget):
                 try:
                     # Safely create QPixmap in main thread
                     pixmap = self.current_document.get_page(self.current_page)
-                    self.document_label.setPixmap(pixmap)
-                    self.document_label.setText("")
+                    if pixmap is not None:
+                        self.document_label.setPixmap(pixmap)
+                        self.document_label.setText("")
 
-                    # Update window title and page info
-                    page_count = self.current_document.get_page_count()
-                    self.setWindowTitle(f"Modern EBook Reader - Page {self.current_page + 1} of {page_count}")
-                    self.update_page_info()
+                        # Update window title and page info
+                        try:
+                            page_count = self.current_document.get_page_count()
+                            self.setWindowTitle(f"Modern EBook Reader - Page {self.current_page + 1} of {page_count}")
+                            self.update_page_info()
+                        except:
+                            # If page info update fails, continue
+                            pass
+                    else:
+                        raise Exception("Failed to create page pixmap")
 
                 except Exception as pixmap_error:
                     # Fallback to text display if QPixmap creation fails
-                    error_text = f"Error rendering page {self.current_page + 1}: {str(pixmap_error)}\n\nTry using a different document format or restart the application."
+                    error_text = f"Error rendering page {self.current_page + 1}: Graphics display unavailable.\n\nThe document is loaded but cannot be displayed visually. This may be due to graphics initialization issues."
                     self.document_label.setText(error_text)
-                    self.document_label.setPixmap(QPixmap())  # Clear any existing pixmap
+                    # Clear any existing pixmap safely
+                    try:
+                        empty_pixmap = self.safe_create_pixmap()
+                        if empty_pixmap is not None:
+                            self.document_label.setPixmap(empty_pixmap)
+                    except:
+                        pass  # Ignore pixmap clearing errors
                     self.document_label.setWordWrap(True)
                     self.document_label.setAlignment(Qt.AlignCenter)
 
             # For text-based documents (EPUB, MOBI), get text content
             elif hasattr(self.current_document, 'get_page_text'):
-                text = self.current_document.get_page_text(self.current_page)
-                self.document_label.setText(text)
-                # Only clear pixmap if we can safely create an empty one
-                empty_pixmap = self.safe_create_pixmap()
-                if empty_pixmap is not None:
-                    self.document_label.setPixmap(empty_pixmap)
+                try:
+                    text = self.current_document.get_page_text(self.current_page)
+                    self.document_label.setText(text)
+                    # Only clear pixmap if we can safely create an empty one
+                    try:
+                        empty_pixmap = self.safe_create_pixmap()
+                        if empty_pixmap is not None:
+                            self.document_label.setPixmap(empty_pixmap)
+                    except:
+                        pass  # Ignore pixmap clearing errors
 
-                # Update styling for text display
-                self.update_document_styling()
+                    # Update styling for text display
+                    try:
+                        self.update_document_styling()
+                    except:
+                        pass  # Ignore styling errors
+                    self.document_label.setWordWrap(True)
+                    self.document_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+                except Exception as text_error:
+                    self.document_label.setText(f"Error reading page text: {str(text_error)}")
+                    self.document_label.setWordWrap(True)
+                    self.document_label.setAlignment(Qt.AlignCenter)
+            else:
+                self.document_label.setText("Document format not supported for display")
                 self.document_label.setWordWrap(True)
-                self.document_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+                self.document_label.setAlignment(Qt.AlignCenter)
 
         except Exception as e:
-            error_text = f"Error displaying page: {str(e)}"
-            self.document_label.setText(error_text)
-            # Only clear pixmap if we can safely create an empty one
-            empty_pixmap = self.safe_create_pixmap()
-            if empty_pixmap is not None:
-                self.document_label.setPixmap(empty_pixmap)
+            # Ultimate fallback
+            error_text = f"Critical error displaying page: {str(e)}"
+            try:
+                self.document_label.setText(error_text)
+                self.document_label.setWordWrap(True)
+                self.document_label.setAlignment(Qt.AlignCenter)
+            except:
+                # If even setting text fails, print to console
+                print(f"Critical display error: {e}")
 
     def toggle_theme(self):
         """Toggle between light and dark themes."""
@@ -843,18 +909,14 @@ class MainWindow(QWidget):
 
     def previous_page(self):
         """Go to previous page."""
-        if self.current_document and self.current_page > 0:
-            self.current_page -= 1
-            self.display_current_page()
-            self.update_page_info()
+        if hasattr(self, 'document_viewer') and self.document_viewer is not None:
+            if self.document_viewer.previous_page():
+                self.update_page_info()
 
     def next_page(self):
         """Go to next page."""
-        if self.current_document:
-            page_count = self.current_document.get_page_count()
-            if self.current_page < page_count - 1:
-                self.current_page += 1
-                self.display_current_page()
+        if hasattr(self, 'document_viewer') and self.document_viewer is not None:
+            if self.document_viewer.next_page():
                 self.update_page_info()
 
     def go_home(self):
@@ -864,11 +926,16 @@ class MainWindow(QWidget):
 
     def update_page_info(self):
         """Update the page information display."""
-        if self.current_document and hasattr(self, 'page_info_label'):
-            page_count = self.current_document.get_page_count()
-            self.page_info_label.setText(f"Page {self.current_page + 1} of {page_count}")
-        elif hasattr(self, 'page_info_label'):
-            self.page_info_label.setText("No document")
+        if hasattr(self, 'document_viewer') and self.document_viewer.current_document:
+            current_page = self.document_viewer.get_current_page()
+            page_count = self.document_viewer.get_page_count()
+            self.setWindowTitle(f"Modern EBook Reader - Page {current_page} of {page_count}")
+            if hasattr(self, 'page_info_label'):
+                self.page_info_label.setText(f"Page {current_page} of {page_count}")
+        else:
+            self.setWindowTitle("Modern EBook Reader - Fluent Design")
+            if hasattr(self, 'page_info_label'):
+                self.page_info_label.setText("No document")
 
 
 def main():

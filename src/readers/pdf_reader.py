@@ -9,14 +9,8 @@ try:
 except ImportError:
     PYMUPDF_AVAILABLE = False
 
-try:
-    from PyQt6.QtGui import QPixmap, QImage
-    from PyQt6.QtCore import QByteArray
-    QT_VERSION = 6
-except ImportError:
-    from PyQt5.QtGui import QPixmap, QImage
-    from PyQt5.QtCore import QByteArray
-    QT_VERSION = 5
+# Qt imports will be handled by the main application
+# This reader only handles raw image data, not QPixmap creation
 
 from .base_reader import BaseReader
 
@@ -57,8 +51,8 @@ class PDFReader(BaseReader):
             self.close()
             raise Exception(f"Failed to load PDF: {str(e)}")
             
-    def get_page_data(self, page_index: int) -> bytes:
-        """Get page image data for display."""
+    def get_page_image_data(self, page_index: int) -> tuple:
+        """Get page image data and dimensions for display."""
         if not self.is_loaded or not self.document:
             raise RuntimeError("No document loaded")
 
@@ -69,38 +63,30 @@ class PDFReader(BaseReader):
             # Get the page
             page = self.document[page_index]
 
-            # Render the page to a pixmap
-            # Use a reasonable DPI for good quality
+            # Render the page to a pixmap with good quality
             mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for better quality
             pix = page.get_pixmap(matrix=mat)
 
-            # Return raw image data instead of QPixmap
+            # Get image data and dimensions
             img_data = pix.tobytes("ppm")
-            return img_data
+            width = pix.width
+            height = pix.height
+
+            return img_data, width, height
 
         except Exception as e:
             raise Exception(f"Failed to render page {page_index}: {str(e)}")
 
-    def get_page(self, page_index: int) -> QPixmap:
-        """Get a page as a QPixmap for display (safe version)."""
-        try:
-            # Get image data first
-            img_data = self.get_page_data(page_index)
+    def get_page_data(self, page_index: int) -> bytes:
+        """Get raw page image data (for backward compatibility)."""
+        img_data, _, _ = self.get_page_image_data(page_index)
+        return img_data
 
-            # Create QPixmap only when called from main thread with QGuiApplication
-            qimg = QImage.fromData(img_data)
-            if qimg.isNull():
-                raise Exception("Failed to create QImage from data")
+    def get_page(self, page_index: int):
+        """Get page content (implementation of abstract method)."""
+        # Return image data for PDF pages
+        return self.get_page_image_data(page_index)
 
-            pixmap = QPixmap.fromImage(qimg)
-            if pixmap.isNull():
-                raise Exception("Failed to create QPixmap from QImage")
-
-            return pixmap
-
-        except Exception as e:
-            raise Exception(f"Failed to create page pixmap {page_index}: {str(e)}")
-            
     def get_page_count(self) -> int:
         """Get the total number of pages."""
         return self.page_count if self.is_loaded else 0
