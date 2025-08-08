@@ -11,6 +11,10 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import Qt
 # QPixmap import moved to safe_create_pixmap method to avoid early initialization
 
+# Add the src directory to the Python path BEFORE importing project modules
+src_path = Path(__file__).parent / "src"
+sys.path.insert(0, str(src_path))
+
 # Initialize logging early
 try:
     from utils.logger import setup_logging
@@ -19,10 +23,6 @@ except Exception as _e:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger("ebook_reader")
     logger.error("Failed to initialize file logger: %s", _e)
-
-# Add the src directory to the Python path
-src_path = Path(__file__).parent / "src"
-sys.path.insert(0, str(src_path))
 
 class MainWindow(QWidget):
     """Direct main window with Fluent Design components."""
@@ -220,9 +220,11 @@ class MainWindow(QWidget):
     def ensure_document_viewer(self):
         """Ensure document viewer is created when needed."""
         if self.document_viewer is None:
+            logger.info("Creating DocumentViewer...")
             from ui.document_viewer import DocumentViewer
             self.document_viewer = DocumentViewer()
             self.document_viewer_layout.addWidget(self.document_viewer)
+            logger.info("DocumentViewer created and added to layout")
 
     def create_ribbon_toolbar(self, parent_layout):
         """Create Microsoft Office-style ribbon toolbar."""
@@ -970,13 +972,15 @@ def main():
         finally:
             try:
                 from PyQt5.QtWidgets import QMessageBox
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setWindowTitle("Application Error")
-                msg.setText("An unexpected error occurred. The application will attempt to continue.")
-                msg.setInformativeText(str(exc_value))
-                msg.setDetailedText(tb_str)
-                msg.exec_()
+                # Only show GUI dialog if a QApplication exists
+                if QApplication.instance() is not None:
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Critical)
+                    msg.setWindowTitle("Application Error")
+                    msg.setText("An unexpected error occurred. The application will attempt to continue.")
+                    msg.setInformativeText(str(exc_value))
+                    msg.setDetailedText(tb_str)
+                    msg.exec_()
             except Exception:
                 pass
     sys.excepthook = _excepthook

@@ -3,14 +3,15 @@ Document Viewer Widget for Modern EBook Reader
 Handles proper display of PDF, EPUB, and MOBI documents with Qt graphics.
 """
 
+# Prefer PyQt5 if available to match the main application binding; fallback to PyQt6
 try:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
-    from PyQt6.QtCore import Qt
-    QT_VERSION = 6
-except ImportError:
     from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
     from PyQt5.QtCore import Qt
     QT_VERSION = 5
+except ImportError:
+    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
+    from PyQt6.QtCore import Qt
+    QT_VERSION = 6
 
 # Logger (no Qt dependency)
 try:
