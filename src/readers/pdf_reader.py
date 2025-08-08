@@ -21,18 +21,27 @@ class PDFReader(BaseReader):
     def __init__(self):
         super().__init__()
         self.document = None
-        
+
+        # Lazy logger import to avoid side-effects on import
+        try:
+            from utils.logger import setup_logging
+            self.logger = setup_logging()
+        except Exception:
+            import logging
+            self.logger = logging.getLogger("ebook_reader")
+
         if not PYMUPDF_AVAILABLE:
             raise ImportError("PyMuPDF is required for PDF support. Install with: pip install PyMuPDF")
             
     def load(self, file_path: str) -> bool:
         """Load a PDF document."""
         try:
+            self.logger.info("Opening PDF: %s", file_path)
             self.document = fitz.open(file_path)
             self.file_path = file_path
             self.page_count = len(self.document)
             self.is_loaded = True
-            
+
             # Extract metadata
             metadata = self.document.metadata
             self.metadata = {
@@ -44,11 +53,13 @@ class PDFReader(BaseReader):
                 'creation_date': metadata.get('creationDate', ''),
                 'modification_date': metadata.get('modDate', ''),
             }
-            
+            self.logger.info("PDF loaded: %s (%d pages)", file_path, self.page_count)
+
             return True
-            
+
         except Exception as e:
             self.close()
+            self.logger.exception("Failed to load PDF %s: %s", file_path, e)
             raise Exception(f"Failed to load PDF: {str(e)}")
             
     def get_page_image_data(self, page_index: int) -> tuple:
@@ -67,8 +78,8 @@ class PDFReader(BaseReader):
             mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for better quality
             pix = page.get_pixmap(matrix=mat)
 
-            # Get image data and dimensions
-            img_data = pix.tobytes("ppm")
+            # Get image data and dimensions (use PNG for Qt compatibility)
+            img_data = pix.tobytes("png")
             width = pix.width
             height = pix.height
 

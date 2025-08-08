@@ -5,10 +5,20 @@ Direct main application with Fluent Design - bypassing src structure
 
 import sys
 from pathlib import Path
+import logging
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                             QFileDialog, QLabel, QScrollArea, QStackedWidget)
 from PyQt5.QtCore import Qt
 # QPixmap import moved to safe_create_pixmap method to avoid early initialization
+
+# Initialize logging early
+try:
+    from utils.logger import setup_logging
+    logger = setup_logging()
+except Exception as _e:
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("ebook_reader")
+    logger.error("Failed to initialize file logger: %s", _e)
 
 # Add the src directory to the Python path
 src_path = Path(__file__).parent / "src"
@@ -16,15 +26,19 @@ sys.path.insert(0, str(src_path))
 
 class MainWindow(QWidget):
     """Direct main window with Fluent Design components."""
-    
+
     def __init__(self):
         super().__init__()
         self.current_document = None
         self.current_page = 0
         self.document_manager = None
-        self.init_ui()
-        self.apply_comprehensive_styling()
-        
+        try:
+            self.init_ui()
+            self.apply_comprehensive_styling()
+        except Exception as e:
+            logger.exception("Error during MainWindow initialization: %s", e)
+            raise
+
     def init_ui(self):
         """Initialize the user interface."""
         # Import Fluent Design components inside the method
@@ -218,15 +232,18 @@ class MainWindow(QWidget):
         # Create ribbon container
         ribbon_card = CardWidget()
         ribbon_card.setFixedHeight(100)
-        ribbon_card.setStyleSheet("""
-            CardWidget {
-                background-color: #F8F8F8;
-                border: none;
-                border-bottom: 2px solid #E0E0E0;
-                border-radius: 0px;
-                padding: 10px;
-            }
-        """)
+        try:
+            ribbon_card.setStyleSheet("""
+                CardWidget {
+                    background-color: #F8F8F8;
+                    border: none;
+                    border-bottom: 2px solid #E0E0E0;
+                    border-radius: 0px;
+                    padding: 10px;
+                }
+            """)
+        except Exception as e:
+            logger.warning("Failed to apply ribbon styles: %s", e)
 
         ribbon_layout = QHBoxLayout(ribbon_card)
         ribbon_layout.setContentsMargins(20, 10, 20, 10)
@@ -641,8 +658,8 @@ class MainWindow(QWidget):
                 self.document_viewer.load_document(self.current_document)
                 self.update_page_info()
             except Exception as display_error:
-                # If display fails, show error message
-                print(f"Error displaying document: {display_error}")
+                # If display fails, log error
+                logger.exception("Error displaying document: %s", display_error)
 
             # Show success message
             try:
@@ -687,9 +704,9 @@ class MainWindow(QWidget):
                     parent=self
                 )
                 info_bar.show()
-            except:
-                # If even error display fails, print to console
-                print(f"Error loading document: {e}")
+            except Exception:
+                # If even error display fails, log to console logger
+                logger.exception("Error loading document: %s", e)
 
             # Reset state on error
             self.current_document = None
@@ -772,9 +789,9 @@ class MainWindow(QWidget):
                 self.document_label.setText(error_text)
                 self.document_label.setWordWrap(True)
                 self.document_label.setAlignment(Qt.AlignCenter)
-            except:
-                # If even setting text fails, print to console
-                print(f"Critical display error: {e}")
+            except Exception:
+                # If even setting text fails, log it
+                logger.exception("Critical display error: %s", e)
 
     def toggle_theme(self):
         """Toggle between light and dark themes."""
@@ -943,22 +960,60 @@ def main():
     # Create QApplication first
     app = QApplication(sys.argv)
     app.setApplicationName("Modern EBook Reader")
-    
+
+    # Install a global exception hook to log unhandled exceptions
+    def _excepthook(exc_type, exc_value, exc_tb):
+        try:
+            import traceback
+            tb_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_tb))
+            logger.error("Unhandled exception: %s: %s\n%s", exc_type.__name__, exc_value, tb_str)
+        finally:
+            try:
+                from PyQt5.QtWidgets import QMessageBox
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setWindowTitle("Application Error")
+                msg.setText("An unexpected error occurred. The application will attempt to continue.")
+                msg.setInformativeText(str(exc_value))
+                msg.setDetailedText(tb_str)
+                msg.exec_()
+            except Exception:
+                pass
+    sys.excepthook = _excepthook
+
     # Initialize Fluent Design theme with explicit light theme for better visibility
-    from qfluentwidgets import setTheme, Theme, setThemeColor, isDarkTheme
+    try:
+        from qfluentwidgets import setTheme, Theme, setThemeColor, isDarkTheme
+        setTheme(Theme.LIGHT)
+        setThemeColor('#0078D4')  # Microsoft Blue
+        logger.info("Theme set to: %s", 'Dark' if isDarkTheme() else 'Light')
+    except Exception as e:
+        logger.warning("Failed to initialize theme: %s", e)
 
-    # Force light theme initially to ensure visibility
-    setTheme(Theme.LIGHT)
-    setThemeColor('#0078D4')  # Microsoft Blue
-
-    print(f"Theme set to: {'Dark' if isDarkTheme() else 'Light'}")
-    
     # Create and show main window
-    window = MainWindow()
-    window.show()
-    
-    print("✅ Fluent Design application started successfully!")
-    sys.exit(app.exec_())
+    try:
+        window = MainWindow()
+        window.show()
+        logger.info("Application window created and shown successfully")
+    except Exception as e:
+        import traceback
+        tb_str = traceback.format_exc()
+        logger.exception("Error creating main window: %s\n%s", e, tb_str)
+        try:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.critical(None, "Startup Error",
+                                 f"Failed to start the application.\n\nDetails: {e}\n\nSee ebook-reader.log for a full stack trace.")
+        except Exception:
+            pass
+        # Exit gracefully
+        return 1
+
+    try:
+        logger.info("✅ Fluent Design application started successfully!")
+        return app.exec_()
+    except Exception as e:
+        logger.exception("Application runtime error: %s", e)
+        return 1
 
 if __name__ == "__main__":
     main()

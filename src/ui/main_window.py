@@ -168,7 +168,7 @@ class MainWindow(QWidget):
         self.content_stack.addWidget(self.welcome_page)
 
     def create_reader_page(self):
-        """Create the reader page with Fluent Design."""
+        """Create the reader page with Fluent Design and embed the DocumentViewer."""
         from qfluentwidgets import BodyLabel, CardWidget
 
         self.reader_page = QWidget()
@@ -178,14 +178,22 @@ class MainWindow(QWidget):
         # Create reader card
         reader_card = CardWidget()
         reader_layout = QVBoxLayout(reader_card)
-        reader_layout.setContentsMargins(20, 20, 20, 20)
+        reader_layout.setContentsMargins(10, 10, 10, 10)
 
+        # Lazy-create the document viewer container
+        from ui.document_viewer import DocumentViewer
+        self.document_viewer = DocumentViewer(self)
+        reader_layout.addWidget(self.document_viewer)
+
+        # Fallback/info label shown when no document is loaded
         self.reader_content = BodyLabel("No document loaded. Please open a document from the Welcome page.")
         self.reader_content.setWordWrap(True)
         if QT_VERSION == 6:
             self.reader_content.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
             self.reader_content.setAlignment(Qt.AlignCenter)
+        # Start with info label visible until a document is loaded
+        self.reader_content.setVisible(True)
         reader_layout.addWidget(self.reader_content)
 
         layout.addWidget(reader_card)
@@ -225,8 +233,9 @@ class MainWindow(QWidget):
             self.load_document(file_path)
 
     def load_document(self, file_path):
-        """Load a document and switch to reader view."""
+        """Load a document and display it in the embedded DocumentViewer."""
         from qfluentwidgets import InfoBar, InfoBarPosition
+        import traceback
 
         try:
             # Load document using document manager
@@ -234,8 +243,35 @@ class MainWindow(QWidget):
             if document:
                 self.current_document = document
 
-                # Update reader content
-                self.reader_content.setText(f"Document loaded: {Path(file_path).name}\n\nDocument viewer implementation in progress...")
+                # Ensure the document viewer exists and load the document into it
+                if hasattr(self, 'document_viewer') and self.document_viewer is not None:
+                    try:
+                        self.document_viewer.load_document(self.current_document)
+                    except Exception as display_error:
+                        # Detailed error and fallback
+                        tb_str = traceback.format_exc()
+                        from qfluentwidgets import InfoBar
+                        InfoBar.error(
+                            title="Display Error",
+                            content=(
+                                "Failed to display the document. This may be due to graphics initialization issues or an unsupported format. "
+                                "Please try restarting the app or opening a different file. See log for details."
+                            ),
+                            orient=Qt.Horizontal,
+                            isClosable=True,
+                            position=InfoBarPosition.TOP,
+                            duration=6000,
+                            parent=self
+                        )
+                        try:
+                            from utils.logger import setup_logging
+                            setup_logging().error("Display error: %s\n%s", display_error, tb_str)
+                        except Exception:
+                            pass
+
+                # Hide the placeholder info label once a document is loaded
+                if hasattr(self, 'reader_content'):
+                    self.reader_content.setVisible(False)
 
                 # Switch to reader view
                 self.show_reader()

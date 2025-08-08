@@ -12,6 +12,14 @@ except ImportError:
     from PyQt5.QtCore import Qt
     QT_VERSION = 5
 
+# Logger (no Qt dependency)
+try:
+    from utils.logger import setup_logging
+    logger = setup_logging()
+except Exception:
+    import logging
+    logger = logging.getLogger("ebook_reader")
+
 # Lazy import QPixmap and QImage to avoid early initialization issues
 def _get_qt_graphics():
     """Get QPixmap and QImage classes when needed."""
@@ -29,8 +37,19 @@ class DocumentViewer(QWidget):
         super().__init__(parent)
         self.current_document = None
         self.current_page = 0
-        self.init_ui()
-        
+        try:
+            self.init_ui()
+        except Exception as e:
+            # Avoid crashing; raise after setting a safe text
+            try:
+                # Minimal fallback label if layout fails
+                self.setLayout(QVBoxLayout())
+                lbl = QLabel(f"Failed to initialize viewer UI: {e}")
+                self.layout().addWidget(lbl)
+            except Exception:
+                pass
+            raise
+
     def init_ui(self):
         """Initialize the document viewer UI."""
         layout = QVBoxLayout(self)
@@ -75,12 +94,16 @@ class DocumentViewer(QWidget):
             if hasattr(self.current_document, 'get_page_image_data'):
                 self.display_pdf_page()
             # Handle text-based documents (EPUB, MOBI)
-            elif hasattr(self.current_document, 'get_page_text'):
+            elif hasattr(self.current_document, 'get_page_text') or hasattr(self.current_document, 'get_page'):
                 self.display_text_page()
             else:
                 self.document_label.setText("Document format not supported for display")
 
         except Exception as e:
+            try:
+                logger.exception("Error displaying current page %s: %s", self.current_page, e)
+            except Exception:
+                pass
             self.document_label.setText(f"Error displaying page: {str(e)}")
 
     def display_pdf_page(self):
@@ -89,8 +112,8 @@ class DocumentViewer(QWidget):
             # Get Qt graphics classes
             QPixmap, QImage = _get_qt_graphics()
 
-            # Get image data and dimensions from PDF reader
-            img_data, width, height = self.current_document.get_page_image_data(self.current_page)
+            # Get image data from PDF reader (dimensions not required here)
+            img_data, _, _ = self.current_document.get_page_image_data(self.current_page)
 
             # Create QImage from raw data
             qimg = QImage.fromData(img_data)
@@ -127,8 +150,11 @@ class DocumentViewer(QWidget):
     def display_text_page(self):
         """Display a text-based page (EPUB, MOBI)."""
         try:
-            # Get text content
-            text = self.current_document.get_page_text(self.current_page)
+            # Get text content (support readers that expose get_page_text or generic get_page)
+            if hasattr(self.current_document, 'get_page_text'):
+                text = self.current_document.get_page_text(self.current_page)
+            else:
+                text = self.current_document.get_page(self.current_page)
 
             # Display text
             self.document_label.setText(text)

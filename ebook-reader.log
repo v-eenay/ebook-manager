@@ -1,0 +1,4 @@
+2025-08-08 23:53:22 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-08 23:53:22 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-08 23:53:22 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf (1 pages)
+2025-08-08 23:53:22 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
