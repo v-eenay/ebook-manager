@@ -251,7 +251,7 @@ class MainWindow(QWidget):
         ribbon_layout.setContentsMargins(15, 8, 15, 8)
         ribbon_layout.setSpacing(20)
 
-        # File Operations Section
+        # File Operations Section with improved icons
         file_section = self.create_ribbon_section("File", [
             ("Open", FIF.FOLDER, self.open_file),
             ("Close", FIF.CLOSE, self.close_document),
@@ -272,11 +272,11 @@ class MainWindow(QWidget):
         """)
         ribbon_layout.addWidget(separator1)
 
-        # View Controls Section
+        # View Controls Section with better icons
         view_section = self.create_ribbon_section("View", [
             ("Zoom In", FIF.ZOOM_IN, self.zoom_in),
             ("Zoom Out", FIF.ZOOM_OUT, self.zoom_out),
-            ("Fit Window", FIF.FIT_PAGE, self.fit_to_window),
+            ("Fit Page", FIF.FULL_SCREEN, self.fit_to_window),
         ])
         ribbon_layout.addWidget(view_section)
 
@@ -294,7 +294,7 @@ class MainWindow(QWidget):
         """)
         ribbon_layout.addWidget(separator2)
 
-        # Navigation Section
+        # Navigation Section with clearer icons
         nav_section = self.create_ribbon_section("Navigation", [
             ("Previous", FIF.LEFT_ARROW, self.previous_page),
             ("Next", FIF.RIGHT_ARROW, self.next_page),
@@ -342,20 +342,30 @@ class MainWindow(QWidget):
         from qfluentwidgets import CaptionLabel, ToolButton
 
         section_widget = QWidget()
-        section_widget.setMinimumWidth(len(buttons) * 75 + 20)  # Ensure adequate width
+        section_widget.setMinimumWidth(len(buttons) * 85 + 25)  # Updated for larger buttons (75px + spacing)
         section_layout = QVBoxLayout(section_widget)
-        section_layout.setContentsMargins(10, 5, 10, 5)
+        section_layout.setContentsMargins(12, 6, 12, 6)
         section_layout.setSpacing(8)
 
         # Buttons container first (larger visual element)
         buttons_container = QHBoxLayout()
-        buttons_container.setSpacing(8)
+        buttons_container.setSpacing(10)  # Increased spacing for larger buttons
         buttons_container.setContentsMargins(0, 0, 0, 0)
 
         for text, icon, callback in buttons:
             button = ToolButton(icon)
             button.setText(text)
-            button.setFixedSize(65, 60)  # Larger buttons for better ribbon appearance
+            button.setFixedSize(75, 70)  # Increased size to accommodate icon and text properly
+
+            # Set tool button display mode to show icon above text
+            from qfluentwidgets import ToolButton
+            try:
+                # Try to set the tool button style to display icon above text
+                button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+            except:
+                # Fallback if the method doesn't exist
+                pass
+
             button.setStyleSheet("""
                 ToolButton {
                     background-color: transparent;
@@ -363,8 +373,9 @@ class MainWindow(QWidget):
                     border-radius: 6px;
                     font-size: 9px;
                     color: #333333;
-                    padding: 4px 2px;
+                    padding: 6px 4px;
                     text-align: center;
+                    qproperty-iconSize: 32px 32px;
                 }
                 ToolButton:hover {
                     background-color: #E8E8E8;

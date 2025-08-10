@@ -210,7 +210,10 @@ class DocumentViewer(QWidget):
                     padding: 15px;
                     margin: 8px;
                     border-radius: 10px;
-                    box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+                    /* Removed box-shadow as it's not supported in Qt stylesheets */
+                    /* Using border styling for visual depth instead */
+                    border-bottom: 3px solid #D0D0D0;
+                    border-right: 3px solid #D0D0D0;
                 }
             """)
 
@@ -252,7 +255,10 @@ class DocumentViewer(QWidget):
                     color: #333333;
                     line-height: 1.6;
                     border-radius: 10px;
-                    box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+                    /* Removed box-shadow as it's not supported in Qt stylesheets */
+                    /* Using border styling for visual depth instead */
+                    border-bottom: 3px solid #D0D0D0;
+                    border-right: 3px solid #D0D0D0;
                 }
             """)
 
