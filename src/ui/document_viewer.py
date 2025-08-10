@@ -52,69 +52,141 @@ class DocumentViewer(QWidget):
             raise
 
     def init_ui(self):
-        """Initialize the document viewer UI."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        """Initialize the document viewer UI (continuous vertical scroll)."""
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
 
-        # Create scroll area for document display
+        # Scroll area
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setAlignment(Qt.AlignCenter)
+        if QT_VERSION == 6:
+            self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignTop)
+        else:
+            self.scroll_area.setAlignment(Qt.AlignTop)
 
-        # Create label for document content
-        self.document_label = QLabel()
-        self.document_label.setAlignment(Qt.AlignCenter)
-        self.document_label.setStyleSheet("""
-            QLabel {
-                background-color: #FFFFFF;
-                border: 1px solid #E0E0E0;
-                padding: 20px;
-                font-size: 16px;
-                color: #666666;
-            }
-        """)
-        self.document_label.setText("No document loaded")
+        # Container inside scroll area for stacking page widgets vertically
+        self.container = QWidget()
+        self.pages_layout = QVBoxLayout(self.container)
+        self.pages_layout.setContentsMargins(20, 20, 20, 20)
+        self.pages_layout.setSpacing(20)
+        if QT_VERSION == 6:
+            self.pages_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        else:
+            self.pages_layout.setAlignment(Qt.AlignTop)
 
-        self.scroll_area.setWidget(self.document_label)
-        layout.addWidget(self.scroll_area)
+        self.scroll_area.setWidget(self.container)
+        root_layout.addWidget(self.scroll_area)
+
+        # State
+        self.page_widgets = []
 
     def load_document(self, document):
-        """Load a document for display."""
+        """Load a document for continuous scrolling display."""
         self.current_document = document
         self.current_page = 0
-        self.display_current_page()
+        self.clear_pages()
+        self.display_all_pages()
 
-    def display_current_page(self):
-        """Display the current page of the document."""
+    def clear_pages(self):
+        """Clear all existing page widgets."""
+        # Remove all page widgets from layout
+        for widget in self.page_widgets:
+            self.pages_layout.removeWidget(widget)
+            widget.deleteLater()
+        self.page_widgets.clear()
+
+    def display_all_pages(self):
+        """Display all pages of the document in a continuous scroll."""
         if not self.current_document:
-            self.document_label.setText("No document loaded")
+            placeholder = QLabel("No document loaded")
+            placeholder.setAlignment(Qt.AlignCenter)
+            placeholder.setStyleSheet("""
+                QLabel {
+                    background-color: #FFFFFF;
+                    border: 1px solid #E0E0E0;
+                    padding: 40px;
+                    font-size: 16px;
+                    color: #666666;
+                    border-radius: 8px;
+                }
+            """)
+            self.pages_layout.addWidget(placeholder)
+            self.page_widgets.append(placeholder)
             return
 
         try:
-            # Handle PDF documents
-            if hasattr(self.current_document, 'get_page_image_data'):
-                self.display_pdf_page()
-            # Handle text-based documents (EPUB, MOBI)
-            elif hasattr(self.current_document, 'get_page_text') or hasattr(self.current_document, 'get_page'):
-                self.display_text_page()
-            else:
-                self.document_label.setText("Document format not supported for display")
+            page_count = self.current_document.get_page_count()
+            logger.info("Displaying %d pages for continuous scroll", page_count)
+
+            for page_num in range(page_count):
+                # Create a container for page number + page content
+                page_container = QWidget()
+                container_layout = QVBoxLayout(page_container)
+                container_layout.setContentsMargins(0, 0, 0, 0)
+                container_layout.setSpacing(5)
+
+                # Add page number indicator
+                page_indicator = QLabel(f"Page {page_num + 1} of {page_count}")
+                page_indicator.setAlignment(Qt.AlignCenter)
+                page_indicator.setStyleSheet("""
+                    QLabel {
+                        background-color: #F0F0F0;
+                        border: 1px solid #D0D0D0;
+                        padding: 5px 15px;
+                        margin: 5px;
+                        font-size: 12px;
+                        font-weight: bold;
+                        color: #666666;
+                        border-radius: 15px;
+                    }
+                """)
+                container_layout.addWidget(page_indicator)
+
+                # Add the actual page content
+                page_widget = self.create_page_widget(page_num)
+                if page_widget:
+                    container_layout.addWidget(page_widget)
+
+                self.pages_layout.addWidget(page_container)
+                self.page_widgets.append(page_container)
 
         except Exception as e:
-            try:
-                logger.exception("Error displaying current page %s: %s", self.current_page, e)
-            except Exception:
-                pass
-            self.document_label.setText(f"Error displaying page: {str(e)}")
+            logger.exception("Error displaying all pages: %s", e)
+            error_label = QLabel(f"Error loading document pages: {str(e)}")
+            error_label.setAlignment(Qt.AlignCenter)
+            error_label.setWordWrap(True)
+            self.pages_layout.addWidget(error_label)
+            self.page_widgets.append(error_label)
 
-    def display_pdf_page(self):
-        """Display a PDF page as an image."""
+    def create_page_widget(self, page_num):
+        """Create a widget for a single page."""
+        try:
+            # Handle PDF documents
+            if hasattr(self.current_document, 'get_page_image_data'):
+                return self.create_pdf_page_widget(page_num)
+            # Handle text-based documents (EPUB, MOBI)
+            elif hasattr(self.current_document, 'get_page_text') or hasattr(self.current_document, 'get_page'):
+                return self.create_text_page_widget(page_num)
+            else:
+                error_label = QLabel(f"Page {page_num + 1}: Unsupported format")
+                error_label.setAlignment(Qt.AlignCenter)
+                return error_label
+
+        except Exception as e:
+            logger.exception("Error creating page widget %d: %s", page_num, e)
+            error_label = QLabel(f"Page {page_num + 1}: Error loading page")
+            error_label.setAlignment(Qt.AlignCenter)
+            return error_label
+
+    def create_pdf_page_widget(self, page_num):
+        """Create a widget for a PDF page."""
         try:
             # Get Qt graphics classes
             QPixmap, QImage = _get_qt_graphics()
 
-            # Get image data from PDF reader (dimensions not required here)
-            img_data, _, _ = self.current_document.get_page_image_data(self.current_page)
+            # Get image data from PDF reader
+            img_data, _, _ = self.current_document.get_page_image_data(page_num)
 
             # Create QImage from raw data
             qimg = QImage.fromData(img_data)
@@ -126,80 +198,102 @@ class DocumentViewer(QWidget):
             if pixmap.isNull():
                 raise Exception("Failed to create QPixmap from QImage")
 
-            # Display the pixmap
-            self.document_label.setPixmap(pixmap)
-            self.document_label.setText("")
-
-            # Update styling for image display
-            self.document_label.setStyleSheet("""
+            # Create label to display the page with page number
+            page_label = QLabel()
+            page_label.setPixmap(pixmap)
+            page_label.setAlignment(Qt.AlignCenter)
+            page_label.setToolTip(f"Page {page_num + 1}")
+            page_label.setStyleSheet("""
                 QLabel {
-                    background-color: #F8F8F8;
-                    border: 1px solid #E0E0E0;
-                    padding: 10px;
+                    background-color: #FFFFFF;
+                    border: 2px solid #E0E0E0;
+                    padding: 15px;
+                    margin: 8px;
+                    border-radius: 10px;
+                    box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
                 }
             """)
 
-        except Exception as e:
-            # Fallback to error message
-            self.document_label.setText(f"Error rendering PDF page: {str(e)}")
-            try:
-                QPixmap, _ = _get_qt_graphics()
-                self.document_label.setPixmap(QPixmap())  # Clear any existing pixmap
-            except:
-                pass  # Ignore pixmap clearing errors
+            return page_label
 
-    def display_text_page(self):
-        """Display a text-based page (EPUB, MOBI)."""
+        except Exception as e:
+            logger.exception("Error creating PDF page widget %d: %s", page_num, e)
+            error_label = QLabel(f"Page {page_num + 1}: Error rendering PDF page")
+            error_label.setAlignment(Qt.AlignCenter)
+            error_label.setWordWrap(True)
+            return error_label
+
+    def create_text_page_widget(self, page_num):
+        """Create a widget for a text-based page (EPUB, MOBI)."""
         try:
             # Get text content (support readers that expose get_page_text or generic get_page)
             if hasattr(self.current_document, 'get_page_text'):
-                text = self.current_document.get_page_text(self.current_page)
+                text = self.current_document.get_page_text(page_num)
             else:
-                text = self.current_document.get_page(self.current_page)
+                text = self.current_document.get_page(page_num)
 
-            # Display text
-            self.document_label.setText(text)
-            # Clear any existing pixmap
-            try:
-                QPixmap, _ = _get_qt_graphics()
-                self.document_label.setPixmap(QPixmap())
-            except:
-                pass  # Ignore pixmap clearing errors
-            self.document_label.setWordWrap(True)
-            self.document_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+            # Create label to display the text with page number
+            page_label = QLabel(text)
+            page_label.setWordWrap(True)
+            page_label.setToolTip(f"Page {page_num + 1}")
+            if QT_VERSION == 6:
+                page_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+            else:
+                page_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
-            # Update styling for text display
-            self.document_label.setStyleSheet("""
+            # Style the text page with better visual separation
+            page_label.setStyleSheet("""
                 QLabel {
                     background-color: #FFFFFF;
-                    border: 1px solid #E0E0E0;
-                    padding: 30px;
+                    border: 2px solid #E0E0E0;
+                    padding: 35px;
+                    margin: 8px;
                     font-size: 14px;
                     color: #333333;
                     line-height: 1.6;
+                    border-radius: 10px;
+                    box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
                 }
             """)
 
+            return page_label
+
         except Exception as e:
-            self.document_label.setText(f"Error reading text: {str(e)}")
+            logger.exception("Error creating text page widget %d: %s", page_num, e)
+            error_label = QLabel(f"Page {page_num + 1}: Error reading text")
+            error_label.setAlignment(Qt.AlignCenter)
+            error_label.setWordWrap(True)
+            return error_label
 
     def next_page(self):
-        """Go to the next page."""
-        if self.current_document and hasattr(self.current_document, 'get_page_count'):
-            page_count = self.current_document.get_page_count()
-            if self.current_page < page_count - 1:
-                self.current_page += 1
-                self.display_current_page()
-                return True
+        """Scroll to the next page in continuous view."""
+        if not self.current_document or not self.page_widgets:
+            return False
+
+        page_count = self.current_document.get_page_count()
+        if self.current_page < page_count - 1:
+            self.current_page += 1
+            self.scroll_to_page(self.current_page)
+            return True
         return False
 
     def previous_page(self):
-        """Go to the previous page."""
-        if self.current_document and self.current_page > 0:
+        """Scroll to the previous page in continuous view."""
+        if not self.current_document or not self.page_widgets:
+            return False
+
+        if self.current_page > 0:
             self.current_page -= 1
-            self.display_current_page()
+            self.scroll_to_page(self.current_page)
             return True
         return False
+
+    def scroll_to_page(self, page_num):
+        """Scroll to a specific page in the continuous view."""
+        if 0 <= page_num < len(self.page_widgets):
+            widget = self.page_widgets[page_num]
+            # Scroll to the widget
+            self.scroll_area.ensureWidgetVisible(widget, 50, 50)
 
     def get_current_page(self):
         """Get the current page number (1-based)."""

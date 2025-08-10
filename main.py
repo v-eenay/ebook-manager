@@ -227,13 +227,13 @@ class MainWindow(QWidget):
             logger.info("DocumentViewer created and added to layout")
 
     def create_ribbon_toolbar(self, parent_layout):
-        """Create Microsoft Office-style ribbon toolbar."""
+        """Create Microsoft Office-style ribbon toolbar with proper spacing."""
         from qfluentwidgets import (PrimaryPushButton, PushButton, ToolButton,
                                    FluentIcon as FIF, CardWidget)
 
-        # Create ribbon container
+        # Create ribbon container with proper height for Windows ribbon style
         ribbon_card = CardWidget()
-        ribbon_card.setFixedHeight(100)
+        ribbon_card.setFixedHeight(120)
         try:
             ribbon_card.setStyleSheet("""
                 CardWidget {
@@ -241,15 +241,15 @@ class MainWindow(QWidget):
                     border: none;
                     border-bottom: 2px solid #E0E0E0;
                     border-radius: 0px;
-                    padding: 10px;
+                    padding: 0px;
                 }
             """)
         except Exception as e:
             logger.warning("Failed to apply ribbon styles: %s", e)
 
         ribbon_layout = QHBoxLayout(ribbon_card)
-        ribbon_layout.setContentsMargins(20, 10, 20, 10)
-        ribbon_layout.setSpacing(30)
+        ribbon_layout.setContentsMargins(15, 8, 15, 8)
+        ribbon_layout.setSpacing(20)
 
         # File Operations Section
         file_section = self.create_ribbon_section("File", [
@@ -258,11 +258,18 @@ class MainWindow(QWidget):
         ])
         ribbon_layout.addWidget(file_section)
 
-        # Add separator
+        # Add vertical separator with proper styling
         separator1 = QWidget()
         separator1.setObjectName("separator")
-        separator1.setFixedWidth(1)
-        separator1.setStyleSheet("background-color: #D0D0D0;")
+        separator1.setFixedWidth(2)
+        separator1.setFixedHeight(80)
+        separator1.setStyleSheet("""
+            QWidget[objectName="separator"] {
+                background-color: #D0D0D0;
+                border-radius: 1px;
+                margin: 10px 5px;
+            }
+        """)
         ribbon_layout.addWidget(separator1)
 
         # View Controls Section
@@ -273,11 +280,18 @@ class MainWindow(QWidget):
         ])
         ribbon_layout.addWidget(view_section)
 
-        # Add separator
+        # Add vertical separator with proper styling
         separator2 = QWidget()
         separator2.setObjectName("separator")
-        separator2.setFixedWidth(1)
-        separator2.setStyleSheet("background-color: #D0D0D0;")
+        separator2.setFixedWidth(2)
+        separator2.setFixedHeight(80)
+        separator2.setStyleSheet("""
+            QWidget[objectName="separator"] {
+                background-color: #D0D0D0;
+                border-radius: 1px;
+                margin: 10px 5px;
+            }
+        """)
         ribbon_layout.addWidget(separator2)
 
         # Navigation Section
@@ -324,44 +338,33 @@ class MainWindow(QWidget):
         parent_layout.addWidget(ribbon_card)
 
     def create_ribbon_section(self, title, buttons):
-        """Create a section of the ribbon with buttons."""
+        """Create a section of the ribbon with properly spaced buttons."""
         from qfluentwidgets import CaptionLabel, ToolButton
 
         section_widget = QWidget()
+        section_widget.setMinimumWidth(len(buttons) * 75 + 20)  # Ensure adequate width
         section_layout = QVBoxLayout(section_widget)
-        section_layout.setContentsMargins(0, 0, 0, 0)
-        section_layout.setSpacing(5)
+        section_layout.setContentsMargins(10, 5, 10, 5)
+        section_layout.setSpacing(8)
 
-        # Section title
-        title_label = CaptionLabel(title)
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("""
-            CaptionLabel {
-                color: #666666;
-                font-size: 11px;
-                font-weight: 600;
-                background-color: transparent;
-                margin-bottom: 5px;
-            }
-        """)
-        section_layout.addWidget(title_label)
-
-        # Buttons container
+        # Buttons container first (larger visual element)
         buttons_container = QHBoxLayout()
-        buttons_container.setSpacing(5)
+        buttons_container.setSpacing(8)
+        buttons_container.setContentsMargins(0, 0, 0, 0)
 
         for text, icon, callback in buttons:
             button = ToolButton(icon)
             button.setText(text)
-            button.setFixedSize(60, 50)
+            button.setFixedSize(65, 60)  # Larger buttons for better ribbon appearance
             button.setStyleSheet("""
                 ToolButton {
                     background-color: transparent;
                     border: 1px solid transparent;
-                    border-radius: 4px;
-                    font-size: 10px;
+                    border-radius: 6px;
+                    font-size: 9px;
                     color: #333333;
-                    padding: 2px;
+                    padding: 4px 2px;
+                    text-align: center;
                 }
                 ToolButton:hover {
                     background-color: #E8E8E8;
@@ -369,12 +372,29 @@ class MainWindow(QWidget):
                 }
                 ToolButton:pressed {
                     background-color: #D0D0D0;
+                    border: 1px solid #B0B0B0;
                 }
             """)
             button.clicked.connect(callback)
             buttons_container.addWidget(button)
 
         section_layout.addLayout(buttons_container)
+
+        # Section title at bottom (ribbon style)
+        title_label = CaptionLabel(title)
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("""
+            CaptionLabel {
+                color: #666666;
+                font-size: 10px;
+                font-weight: 600;
+                background-color: transparent;
+                margin-top: 2px;
+                padding: 2px;
+            }
+        """)
+        section_layout.addWidget(title_label)
+
         return section_widget
 
     def safe_create_pixmap(self, *args):
