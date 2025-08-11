@@ -41,3 +41,80 @@
 2025-08-10 22:51:26 | INFO     | ebook_reader | main.ensure_document_viewer:223 | Creating DocumentViewer...
 2025-08-10 22:51:26 | INFO     | ebook_reader | main.ensure_document_viewer:227 | DocumentViewer created and added to layout
 2025-08-10 22:51:26 | INFO     | ebook_reader | document_viewer.display_all_pages:120 | Displaying 3 pages for continuous scroll
+2025-08-10 22:54:38 | INFO     | ebook_reader | main.main:1024 | Theme set to: Light
+2025-08-10 22:54:39 | ERROR    | ebook_reader | main.__init__:39 | Error during MainWindow initialization: type object 'FluentIcon' has no attribute 'CHEVRON_LEFT'
+Traceback (most recent call last):
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 36, in __init__
+    self.init_ui()
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 71, in init_ui
+    self.create_document_page()
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 209, in create_document_page
+    self.create_ribbon_toolbar(layout)
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 299, in create_ribbon_toolbar
+    ("Previous", FIF.CHEVRON_LEFT, self.previous_page),
+                 ^^^^^^^^^^^^^^^^
+AttributeError: type object 'FluentIcon' has no attribute 'CHEVRON_LEFT'. Did you mean: 'CHEVRON_RIGHT'?
+2025-08-10 22:54:39 | ERROR    | ebook_reader | main.main:1036 | Error creating main window: type object 'FluentIcon' has no attribute 'CHEVRON_LEFT'
+Traceback (most recent call last):
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 1030, in main
+    window = MainWindow()
+             ^^^^^^^^^^^^
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 36, in __init__
+    self.init_ui()
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 71, in init_ui
+    self.create_document_page()
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 209, in create_document_page
+    self.create_ribbon_toolbar(layout)
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 299, in create_ribbon_toolbar
+    ("Previous", FIF.CHEVRON_LEFT, self.previous_page),
+                 ^^^^^^^^^^^^^^^^
+AttributeError: type object 'FluentIcon' has no attribute 'CHEVRON_LEFT'. Did you mean: 'CHEVRON_RIGHT'?
+Traceback (most recent call last):
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 1030, in main
+    window = MainWindow()
+             ^^^^^^^^^^^^
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 36, in __init__
+    self.init_ui()
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 71, in init_ui
+    self.create_document_page()
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 209, in create_document_page
+    self.create_ribbon_toolbar(layout)
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 299, in create_ribbon_toolbar
+    ("Previous", FIF.CHEVRON_LEFT, self.previous_page),
+                 ^^^^^^^^^^^^^^^^
+AttributeError: type object 'FluentIcon' has no attribute 'CHEVRON_LEFT'. Did you mean: 'CHEVRON_RIGHT'?
+2025-08-10 22:55:17 | INFO     | ebook_reader | main.main:1024 | Theme set to: Light
+2025-08-10 22:55:18 | INFO     | ebook_reader | main.main:1032 | Application window created and shown successfully
+2025-08-10 22:55:18 | INFO     | ebook_reader | main.main:1047 | ✅ Fluent Design application started successfully!
+2025-08-10 23:47:25 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-10 23:47:26 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-10 23:47:26 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-10 23:47:26 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-10 23:47:26 | INFO     | ebook_reader | main.ensure_document_viewer:223 | Creating DocumentViewer...
+2025-08-10 23:47:26 | INFO     | ebook_reader | main.ensure_document_viewer:227 | DocumentViewer created and added to layout
+2025-08-10 23:47:26 | INFO     | ebook_reader | document_viewer.display_all_pages:120 | Displaying 3 pages for continuous scroll
+2025-08-10 23:47:40 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-10 23:47:40 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-10 23:47:40 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-10 23:47:40 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-10 23:47:40 | INFO     | ebook_reader | document_viewer.display_all_pages:120 | Displaying 3 pages for continuous scroll
+2025-08-11 12:27:40 | INFO     | ebook_reader | main.main:1024 | Theme set to: Light
+2025-08-11 12:27:41 | INFO     | ebook_reader | main.main:1032 | Application window created and shown successfully
+2025-08-11 12:27:41 | INFO     | ebook_reader | main.main:1047 | ✅ Fluent Design application started successfully!
+2025-08-11 12:27:46 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 12:27:46 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 12:27:46 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-11 12:27:46 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 12:27:46 | INFO     | ebook_reader | main.ensure_document_viewer:223 | Creating DocumentViewer...
+2025-08-11 12:27:46 | INFO     | ebook_reader | main.ensure_document_viewer:227 | DocumentViewer created and added to layout
+2025-08-11 12:27:46 | INFO     | ebook_reader | document_viewer.display_all_pages:120 | Displaying 3 pages for continuous scroll
+2025-08-11 12:34:11 | INFO     | ebook_reader | main.main:1024 | Theme set to: Light
+2025-08-11 12:34:11 | INFO     | ebook_reader | main.main:1032 | Application window created and shown successfully
+2025-08-11 12:34:11 | INFO     | ebook_reader | main.main:1047 | ✅ Fluent Design application started successfully!
+2025-08-11 12:34:33 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 12:34:33 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 12:34:33 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-11 12:34:33 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 12:34:33 | INFO     | ebook_reader | main.ensure_document_viewer:223 | Creating DocumentViewer...
+2025-08-11 12:34:33 | INFO     | ebook_reader | main.ensure_document_viewer:227 | DocumentViewer created and added to layout
+2025-08-11 12:34:33 | INFO     | ebook_reader | document_viewer.display_all_pages_modern:373 | Displaying 3 pages with modern design
