@@ -6,23 +6,17 @@ Clean, minimal, professional design focused on document viewing.
 from pathlib import Path
 
 try:
-    from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget
-    from PyQt6.QtCore import Qt, pyqtSignal
-    from PyQt6.QtGui import QIcon, QKeySequence, QAction
-    QT_VERSION = 6
-except ImportError:
     from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget
     from PyQt5.QtCore import Qt, pyqtSignal
     from PyQt5.QtGui import QIcon, QKeySequence, QAction
     QT_VERSION = 5
+except ImportError:
+    from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget
+    from PyQt6.QtCore import Qt, pyqtSignal
+    from PyQt6.QtGui import QIcon, QKeySequence, QAction
+    QT_VERSION = 6
 
-# Logger
-try:
-    from utils.logger import setup_logging
-    logger = setup_logging()
-except Exception:
-    import logging
-    logger = logging.getLogger("ebook_reader")
+# Logger will be imported inside methods to avoid early initialization
 
 class MainWindow(QMainWindow):
     """Main window with clean, minimal design focused on document viewing."""
@@ -92,7 +86,8 @@ class MainWindow(QMainWindow):
 
     def create_minimal_toolbar(self, parent_layout):
         """Create an extremely minimal, professional toolbar."""
-        from qfluentwidgets import (ToolButton, FluentIcon as FIF, CaptionLabel)
+        # Import qfluentwidgets here to avoid early widget creation
+        from qfluentwidgets import ToolButton, FluentIcon as FIF, CaptionLabel
 
         # Create ultra-minimal toolbar - reduced height for more document space
         toolbar = QWidget()
@@ -301,11 +296,19 @@ class MainWindow(QMainWindow):
     def ensure_document_viewer(self):
         """Ensure document viewer is created when needed."""
         if self.document_viewer is None:
-            logger.info("Creating DocumentViewer...")
+            try:
+                from utils.logger import setup_logging
+                logger = setup_logging()
+                logger.info("Creating DocumentViewer...")
+            except:
+                pass
             from ui.document_viewer import DocumentViewer
             self.document_viewer = DocumentViewer()
             self.document_viewer_layout.addWidget(self.document_viewer)
-            logger.info("DocumentViewer created successfully")
+            try:
+                logger.info("DocumentViewer created successfully")
+            except:
+                pass
 
     def show_welcome(self):
         """Show the welcome page."""
@@ -362,10 +365,20 @@ class MainWindow(QMainWindow):
                 self.setWindowTitle(f"Modern EBook Reader - {filename}")
                 self.update_page_info_display()
                 
-                logger.info("Document loaded successfully: %s", filename)
+                try:
+                    from utils.logger import setup_logging
+                    logger = setup_logging()
+                    logger.info("Document loaded successfully: %s", filename)
+                except:
+                    pass
 
         except Exception as e:
-            logger.exception("Error loading document: %s", e)
+            try:
+                from utils.logger import setup_logging
+                logger = setup_logging()
+                logger.exception("Error loading document: %s", e)
+            except:
+                pass
             # TODO: Show error message to user
 
     def previous_page(self):

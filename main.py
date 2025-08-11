@@ -23,9 +23,10 @@ except Exception as e:
 def main():
     """Main application entry point."""
     try:
-        # Import Qt after path setup
+        # Import Qt after path setup - use PyQt5 for qfluentwidgets compatibility
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtCore import Qt
+        
         from ui.main_window import MainWindow
         
         # Create application

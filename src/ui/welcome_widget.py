@@ -5,20 +5,17 @@ Welcome Widget - Clean, minimal welcome screen with recent books functionality
 from pathlib import Path
 
 try:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem
-    from PyQt6.QtCore import Qt, pyqtSignal
-    from PyQt6.QtGui import QPixmap
-    QT_VERSION = 6
-except ImportError:
     from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem
     from PyQt5.QtCore import Qt, pyqtSignal
     from PyQt5.QtGui import QPixmap
     QT_VERSION = 5
+except ImportError:
+    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem
+    from PyQt6.QtCore import Qt, pyqtSignal
+    from PyQt6.QtGui import QPixmap
+    QT_VERSION = 6
 
-from qfluentwidgets import (
-    CardWidget, PrimaryPushButton, TitleLabel, BodyLabel, CaptionLabel,
-    FluentIcon as FIF, SubtitleLabel
-)
+# qfluentwidgets imports moved to methods to avoid early widget creation
 
 class WelcomeWidget(QWidget):
     """Clean, minimal welcome screen with recent books functionality."""
@@ -47,6 +44,8 @@ class WelcomeWidget(QWidget):
 
     def create_welcome_content(self, parent_layout):
         """Create minimal, professional welcome content."""
+        from qfluentwidgets import CardWidget, PrimaryPushButton, TitleLabel, BodyLabel, CaptionLabel
+        
         welcome_container = QWidget()
         welcome_container.setMaximumWidth(450)
         layout = QVBoxLayout(welcome_container)
@@ -148,6 +147,8 @@ class WelcomeWidget(QWidget):
 
     def create_recent_books_panel(self, parent_layout):
         """Create a minimal, professional recent books panel."""
+        from qfluentwidgets import CardWidget, PrimaryPushButton, SubtitleLabel
+        
         recent_container = QWidget()
         recent_container.setMaximumWidth(350)
         layout = QVBoxLayout(recent_container)
