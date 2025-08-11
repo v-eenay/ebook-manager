@@ -118,3 +118,13 @@ AttributeError: type object 'FluentIcon' has no attribute 'CHEVRON_LEFT'. Did yo
 2025-08-11 12:34:33 | INFO     | ebook_reader | main.ensure_document_viewer:223 | Creating DocumentViewer...
 2025-08-11 12:34:33 | INFO     | ebook_reader | main.ensure_document_viewer:227 | DocumentViewer created and added to layout
 2025-08-11 12:34:33 | INFO     | ebook_reader | document_viewer.display_all_pages_modern:373 | Displaying 3 pages with modern design
+2025-08-11 12:53:32 | INFO     | ebook_reader | main.main:1024 | Theme set to: Light
+2025-08-11 12:53:33 | INFO     | ebook_reader | main.main:1032 | Application window created and shown successfully
+2025-08-11 12:53:33 | INFO     | ebook_reader | main.main:1047 | ✅ Fluent Design application started successfully!
+2025-08-11 12:53:37 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 12:53:37 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 12:53:37 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-11 12:53:37 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 12:53:37 | INFO     | ebook_reader | main.ensure_document_viewer:223 | Creating DocumentViewer...
+2025-08-11 12:53:38 | INFO     | ebook_reader | main.ensure_document_viewer:227 | DocumentViewer created and added to layout
+2025-08-11 12:53:38 | INFO     | ebook_reader | document_viewer.display_all_pages_modern:373 | Displaying 3 pages with modern design
