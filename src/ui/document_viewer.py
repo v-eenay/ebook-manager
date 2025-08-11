@@ -25,6 +25,9 @@ class DocumentViewer(QWidget):
         self.current_document = None
         self.current_page = 0
         self.zoom_level = 1.0
+        self.search_text_current = ""
+        self.search_matches = []
+        self.current_match_index = -1
         self.init_ui()
 
     def init_ui(self):
@@ -263,13 +266,187 @@ class DocumentViewer(QWidget):
         """Zoom in on the document."""
         self.zoom_level = min(self.zoom_level * 1.2, 3.0)
         self.display_document()
+        return self.zoom_level
 
     def zoom_out(self):
         """Zoom out on the document."""
         self.zoom_level = max(self.zoom_level / 1.2, 0.3)
         self.display_document()
+        return self.zoom_level
+
+    def set_zoom_level(self, zoom_level):
+        """Set specific zoom level."""
+        self.zoom_level = max(0.3, min(zoom_level, 3.0))
+        self.display_document()
+        return self.zoom_level
 
     def fit_to_window(self):
         """Fit document to window."""
         self.zoom_level = 1.0
         self.display_document()
+        return self.zoom_level
+
+    def fit_to_width(self):
+        """Fit document to window width."""
+        if not self.current_document:
+            return self.zoom_level
+            
+        # Calculate zoom level to fit width
+        try:
+            if hasattr(self.current_document, 'get_page_image_data'):
+                # For PDF documents, get the actual page dimensions
+                img_data, _, _ = self.current_document.get_page_image_data(self.current_page)
+                qimg = QImage.fromData(img_data)
+                if not qimg.isNull():
+                    available_width = self.scroll_area.viewport().width() - 40  # Account for margins
+                    page_width = qimg.width()
+                    if page_width > 0:
+                        self.zoom_level = available_width / page_width
+                        self.zoom_level = max(0.3, min(self.zoom_level, 3.0))
+                        self.display_document()
+        except Exception as e:
+            logger.exception("Error fitting to width: %s", e)
+            
+        return self.zoom_level
+
+    def fit_to_height(self):
+        """Fit document to window height."""
+        if not self.current_document:
+            return self.zoom_level
+            
+        # Calculate zoom level to fit height
+        try:
+            if hasattr(self.current_document, 'get_page_image_data'):
+                # For PDF documents, get the actual page dimensions
+                img_data, _, _ = self.current_document.get_page_image_data(self.current_page)
+                qimg = QImage.fromData(img_data)
+                if not qimg.isNull():
+                    available_height = self.scroll_area.viewport().height() - 40  # Account for margins
+                    page_height = qimg.height()
+                    if page_height > 0:
+                        self.zoom_level = available_height / page_height
+                        self.zoom_level = max(0.3, min(self.zoom_level, 3.0))
+                        self.display_document()
+        except Exception as e:
+            logger.exception("Error fitting to height: %s", e)
+            
+        return self.zoom_level
+
+    def jump_to_page(self, page_num):
+        """Jump to a specific page (0-based)."""
+        if self.current_document:
+            try:
+                page_count = self.current_document.get_page_count()
+                if 0 <= page_num < page_count:
+                    self.current_page = page_num
+                    self.display_document()
+                    return True
+            except:
+                pass
+        return False
+
+    def search_text(self, search_text):
+        """Search for text in the document."""
+        self.search_text_current = search_text
+        self.search_matches = []
+        self.current_match_index = -1
+        
+        if not self.current_document or not search_text:
+            return
+            
+        try:
+            # For text-based documents, search in text content
+            if hasattr(self.current_document, 'get_page_text'):
+                page_count = self.current_document.get_page_count()
+                for page_num in range(page_count):
+                    try:
+                        text = self.current_document.get_page_text(page_num)
+                        if search_text.lower() in text.lower():
+                            self.search_matches.append(page_num)
+                    except:
+                        continue
+                        
+                # Jump to first match
+                if self.search_matches:
+                    self.current_match_index = 0
+                    first_match_page = self.search_matches[0]
+                    if first_match_page != self.current_page:
+                        self.jump_to_page(first_match_page)
+                    self.highlight_search_text()
+                    
+        except Exception as e:
+            logger.exception("Error searching text: %s", e)
+
+    def find_next(self):
+        """Find next search match."""
+        if not self.search_matches:
+            return
+            
+        self.current_match_index = (self.current_match_index + 1) % len(self.search_matches)
+        match_page = self.search_matches[self.current_match_index]
+        
+        if match_page != self.current_page:
+            self.jump_to_page(match_page)
+        self.highlight_search_text()
+
+    def find_previous(self):
+        """Find previous search match."""
+        if not self.search_matches:
+            return
+            
+        self.current_match_index = (self.current_match_index - 1) % len(self.search_matches)
+        match_page = self.search_matches[self.current_match_index]
+        
+        if match_page != self.current_page:
+            self.jump_to_page(match_page)
+        self.highlight_search_text()
+
+    def highlight_search_text(self):
+        """Highlight search text in the current view."""
+        if not self.search_text_current:
+            return
+            
+        # For text-based documents, highlight in QTextEdit
+        try:
+            for i in range(self.content_layout.count()):
+                widget = self.content_layout.itemAt(i).widget()
+                if isinstance(widget, QTextEdit):
+                    # Clear previous highlights
+                    cursor = widget.textCursor()
+                    cursor.select(cursor.Document)
+                    cursor.setCharFormat(widget.currentCharFormat())
+                    
+                    # Highlight search text
+                    from PyQt5.QtGui import QTextCharFormat, QColor
+                    highlight_format = QTextCharFormat()
+                    highlight_format.setBackground(QColor("#FFFF00"))  # Yellow highlight
+                    
+                    cursor = widget.textCursor()
+                    cursor.movePosition(cursor.Start)
+                    
+                    while True:
+                        cursor = widget.document().find(self.search_text_current, cursor)
+                        if cursor.isNull():
+                            break
+                        cursor.setCharFormat(highlight_format)
+                    break
+        except Exception as e:
+            logger.exception("Error highlighting search text: %s", e)
+
+    def clear_search_highlights(self):
+        """Clear search highlights."""
+        self.search_text_current = ""
+        self.search_matches = []
+        self.current_match_index = -1
+        
+        # Clear highlights from text widgets
+        try:
+            for i in range(self.content_layout.count()):
+                widget = self.content_layout.itemAt(i).widget()
+                if isinstance(widget, QTextEdit):
+                    cursor = widget.textCursor()
+                    cursor.select(cursor.Document)
+                    cursor.setCharFormat(widget.currentCharFormat())
+                    break
+        except Exception as e:
+            logger.exception("Error clearing search highlights: %s", e)
