@@ -46,9 +46,9 @@ class WelcomeWidget(QWidget):
             self.create_recent_books_panel(main_layout)
 
     def create_welcome_content(self, parent_layout):
-        """Create the main welcome content."""
+        """Create minimal, professional welcome content."""
         welcome_container = QWidget()
-        welcome_container.setMaximumWidth(500)
+        welcome_container.setMaximumWidth(450)
         layout = QVBoxLayout(welcome_container)
         
         if QT_VERSION == 6:
@@ -56,33 +56,47 @@ class WelcomeWidget(QWidget):
         else:
             layout.setAlignment(Qt.AlignCenter)
         
-        layout.setSpacing(30)
+        layout.setSpacing(25)
 
-        # Main welcome card
+        # Minimal welcome card with clean styling
         card = CardWidget()
+        card.setStyleSheet("""
+            CardWidget {
+                background-color: #FEFEFE;
+                border: 1px solid #F0F0F0;
+                border-radius: 8px;
+            }
+        """)
         card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(40, 40, 40, 40)
-        card_layout.setSpacing(25)
+        card_layout.setContentsMargins(35, 35, 35, 35)
+        card_layout.setSpacing(20)
 
-        # App icon
-        icon_label = BodyLabel("📚")
-        icon_label.setStyleSheet("font-size: 48px;")
-        if QT_VERSION == 6:
-            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            icon_label.setAlignment(Qt.AlignCenter)
-        card_layout.addWidget(icon_label)
-        
-        # App title
+        # Minimal app title - no icon for cleaner look
         title = TitleLabel("Modern EBook Reader")
+        title.setStyleSheet("""
+            TitleLabel {
+                font-size: 24px;
+                font-weight: 300;
+                color: #2C2C2C;
+                margin-bottom: 5px;
+            }
+        """)
         if QT_VERSION == 6:
             title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
             title.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(title)
         
-        # Description
-        desc = BodyLabel("A clean, minimal ebook reader for PDF, EPUB, and MOBI files.")
+        # Minimal description
+        desc = BodyLabel("Professional document reading for PDF, EPUB, and MOBI files")
+        desc.setStyleSheet("""
+            BodyLabel {
+                font-size: 14px;
+                color: #666666;
+                font-weight: 400;
+                line-height: 1.4;
+            }
+        """)
         desc.setWordWrap(True)
         if QT_VERSION == 6:
             desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -90,15 +104,39 @@ class WelcomeWidget(QWidget):
             desc.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(desc)
         
-        # Open button
-        open_button = PrimaryPushButton("Open Document", FIF.FOLDER)
-        open_button.setMinimumWidth(180)
-        open_button.setMinimumHeight(40)
+        # Clean, minimal open button
+        open_button = PrimaryPushButton("Open Document")
+        open_button.setStyleSheet("""
+            PrimaryPushButton {
+                background-color: #0078D4;
+                border: none;
+                border-radius: 4px;
+                padding: 12px 24px;
+                font-size: 14px;
+                font-weight: 500;
+                color: white;
+            }
+            PrimaryPushButton:hover {
+                background-color: #106EBE;
+            }
+            PrimaryPushButton:pressed {
+                background-color: #005A9E;
+            }
+        """)
+        open_button.setMinimumWidth(160)
+        open_button.setMinimumHeight(36)
         open_button.clicked.connect(self.open_file_requested.emit)
         card_layout.addWidget(open_button)
         
-        # Keyboard shortcut hint
-        shortcut_label = CaptionLabel("Press Ctrl+O to open a document")
+        # Minimal keyboard shortcut hint
+        shortcut_label = CaptionLabel("Ctrl+O")
+        shortcut_label.setStyleSheet("""
+            CaptionLabel {
+                font-size: 11px;
+                color: #999999;
+                font-weight: 400;
+            }
+        """)
         if QT_VERSION == 6:
             shortcut_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
@@ -109,49 +147,71 @@ class WelcomeWidget(QWidget):
         parent_layout.addWidget(welcome_container)
 
     def create_recent_books_panel(self, parent_layout):
-        """Create the recent books panel."""
+        """Create a minimal, professional recent books panel."""
         recent_container = QWidget()
-        recent_container.setMaximumWidth(400)
+        recent_container.setMaximumWidth(350)
         layout = QVBoxLayout(recent_container)
-        layout.setSpacing(20)
+        layout.setSpacing(15)
 
-        # Recent books card
+        # Minimal recent books card
         recent_card = CardWidget()
+        recent_card.setStyleSheet("""
+            CardWidget {
+                background-color: #FEFEFE;
+                border: 1px solid #F0F0F0;
+                border-radius: 8px;
+            }
+        """)
         recent_layout = QVBoxLayout(recent_card)
-        recent_layout.setContentsMargins(20, 20, 20, 20)
-        recent_layout.setSpacing(15)
+        recent_layout.setContentsMargins(18, 18, 18, 18)
+        recent_layout.setSpacing(12)
 
-        # Title
-        recent_title = SubtitleLabel("Recent Books")
+        # Minimal title
+        recent_title = SubtitleLabel("Recent")
+        recent_title.setStyleSheet("""
+            SubtitleLabel {
+                font-size: 16px;
+                font-weight: 500;
+                color: #2C2C2C;
+                margin-bottom: 5px;
+            }
+        """)
         recent_layout.addWidget(recent_title)
 
-        # Recent books list
+        # Clean recent books list
         self.recent_list = QListWidget()
-        self.recent_list.setMaximumHeight(300)
+        self.recent_list.setMaximumHeight(280)
         self.recent_list.setStyleSheet("""
             QListWidget {
                 border: none;
                 background-color: transparent;
                 outline: none;
+                font-size: 13px;
             }
             QListWidget::item {
-                padding: 8px;
-                border-radius: 4px;
-                margin: 2px 0px;
+                padding: 6px 8px;
+                border-radius: 3px;
+                margin: 1px 0px;
+                color: #444444;
             }
             QListWidget::item:hover {
-                background-color: #E8E8E8;
+                background-color: #F5F5F5;
             }
             QListWidget::item:selected {
-                background-color: #0078D4;
-                color: white;
+                background-color: #E3F2FD;
+                color: #1976D2;
             }
         """)
         
-        # Populate recent books
-        for book_path in self.recent_books[:10]:  # Show max 10 recent books
+        # Populate recent books - show max 8 for cleaner look
+        for book_path in self.recent_books[:8]:
             if Path(book_path).exists():
-                item = QListWidgetItem(Path(book_path).name)
+                # Show only filename, truncate if too long
+                filename = Path(book_path).name
+                if len(filename) > 35:
+                    filename = filename[:32] + "..."
+                
+                item = QListWidgetItem(filename)
                 item.setData(Qt.UserRole, book_path)
                 item.setToolTip(book_path)
                 self.recent_list.addItem(item)
@@ -159,8 +219,22 @@ class WelcomeWidget(QWidget):
         self.recent_list.itemDoubleClicked.connect(self.on_recent_book_selected)
         recent_layout.addWidget(self.recent_list)
 
-        # Clear recent button
-        clear_button = PrimaryPushButton("Clear Recent", FIF.DELETE)
+        # Minimal clear button
+        clear_button = PrimaryPushButton("Clear")
+        clear_button.setStyleSheet("""
+            PrimaryPushButton {
+                background-color: #F5F5F5;
+                border: 1px solid #E0E0E0;
+                border-radius: 3px;
+                padding: 6px 12px;
+                font-size: 12px;
+                color: #666666;
+            }
+            PrimaryPushButton:hover {
+                background-color: #EEEEEE;
+                border-color: #D0D0D0;
+            }
+        """)
         clear_button.clicked.connect(self.clear_recent_books)
         recent_layout.addWidget(clear_button)
 

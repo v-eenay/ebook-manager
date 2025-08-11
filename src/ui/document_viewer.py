@@ -33,57 +33,61 @@ class DocumentViewer(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        """Initialize the clean, minimal UI."""
+        """Initialize the ultra-minimal, professional UI focused on content."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Create scroll area for document content
+        # Create scroll area with minimal styling - maximize document space
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setAlignment(Qt.AlignCenter)
         self.scroll_area.setStyleSheet("""
             QScrollArea {
                 border: none;
-                background-color: #F8F8F8;
+                background-color: #FDFDFD;
             }
             QScrollBar:vertical {
                 border: none;
                 background: transparent;
-                width: 12px;
-                border-radius: 6px;
+                width: 8px;
             }
             QScrollBar::handle:vertical {
-                background: #C0C0C0;
-                border-radius: 6px;
+                background: #CCCCCC;
+                border-radius: 4px;
                 min-height: 20px;
             }
             QScrollBar::handle:vertical:hover {
-                background: #A0A0A0;
+                background: #AAAAAA;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
             }
         """)
 
-        # Create content widget
+        # Create content widget with minimal margins for maximum space
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(20, 20, 20, 20)
+        self.content_layout.setContentsMargins(10, 10, 10, 10)  # Reduced margins
         self.content_layout.setAlignment(Qt.AlignCenter)
 
-        # Create placeholder label
+        # Create minimal placeholder
         self.create_placeholder()
 
         self.scroll_area.setWidget(self.content_widget)
         layout.addWidget(self.scroll_area)
 
     def create_placeholder(self):
-        """Create placeholder content when no document is loaded."""
-        placeholder = QLabel("No document loaded")
+        """Create minimal placeholder content when no document is loaded."""
+        placeholder = QLabel("Open a document to begin reading")
         placeholder.setAlignment(Qt.AlignCenter)
         placeholder.setStyleSheet("""
             QLabel {
-                color: #666666;
-                font-size: 16px;
-                padding: 40px;
+                color: #999999;
+                font-size: 14px;
+                font-weight: 300;
+                padding: 60px 20px;
                 background-color: transparent;
             }
         """)
@@ -118,7 +122,7 @@ class DocumentViewer(QWidget):
             self.display_error(f"Error displaying document: {str(e)}")
 
     def display_pdf_page(self):
-        """Display a PDF page."""
+        """Display a PDF page with minimal, professional styling."""
         try:
             # Get image data from PDF reader
             img_data, _, _ = self.current_document.get_page_image_data(self.current_page)
@@ -142,17 +146,16 @@ class DocumentViewer(QWidget):
             if pixmap.isNull():
                 raise Exception("Failed to create QPixmap from QImage")
 
-            # Create label to display the page
+            # Create label with minimal styling - focus on content
             page_label = QLabel()
             page_label.setPixmap(pixmap)
             page_label.setAlignment(Qt.AlignCenter)
             page_label.setStyleSheet("""
                 QLabel {
                     background-color: white;
-                    border: 1px solid #E0E0E0;
-                    border-radius: 4px;
-                    padding: 10px;
-                    margin: 10px;
+                    border: 1px solid #F0F0F0;
+                    padding: 5px;
+                    margin: 5px;
                 }
             """)
 
@@ -163,37 +166,39 @@ class DocumentViewer(QWidget):
             self.display_error("Error displaying PDF page")
 
     def display_text_page(self):
-        """Display a text-based page."""
+        """Display a text-based page with professional typography."""
         try:
             # Get text content
             text = self.current_document.get_page_text(self.current_page)
 
-            # Create text display
+            # Create text display with professional styling
             text_display = QTextEdit()
             text_display.setPlainText(text)
             text_display.setReadOnly(True)
             text_display.setStyleSheet("""
                 QTextEdit {
                     background-color: white;
-                    border: 1px solid #E0E0E0;
-                    border-radius: 4px;
-                    padding: 20px;
-                    margin: 10px;
-                    font-family: 'Segoe UI', Georgia, serif;
-                    font-size: 14px;
-                    line-height: 1.6;
-                    color: #333333;
+                    border: 1px solid #F0F0F0;
+                    padding: 25px;
+                    margin: 5px;
+                    font-family: 'Segoe UI', 'Georgia', serif;
+                    font-size: 15px;
+                    line-height: 1.7;
+                    color: #2C2C2C;
+                    selection-background-color: #E3F2FD;
                 }
                 QScrollBar:vertical {
                     border: none;
-                    background: #F0F0F0;
-                    width: 12px;
-                    border-radius: 6px;
+                    background: transparent;
+                    width: 8px;
                 }
                 QScrollBar::handle:vertical {
-                    background: #C0C0C0;
-                    border-radius: 6px;
+                    background: #CCCCCC;
+                    border-radius: 4px;
                     min-height: 20px;
+                }
+                QScrollBar::handle:vertical:hover {
+                    background: #AAAAAA;
                 }
             """)
 
@@ -204,19 +209,19 @@ class DocumentViewer(QWidget):
             self.display_error("Error displaying text page")
 
     def display_error(self, message):
-        """Display an error message."""
+        """Display a minimal error message."""
         error_label = QLabel(message)
         error_label.setAlignment(Qt.AlignCenter)
         error_label.setWordWrap(True)
         error_label.setStyleSheet("""
             QLabel {
-                color: #D32F2F;
-                font-size: 14px;
-                padding: 20px;
-                background-color: #FFEBEE;
-                border: 1px solid #FFCDD2;
-                border-radius: 4px;
-                margin: 20px;
+                color: #C62828;
+                font-size: 13px;
+                font-weight: 400;
+                padding: 15px;
+                background-color: #FFF8F8;
+                border: 1px solid #FFEBEE;
+                margin: 10px;
             }
         """)
         self.content_layout.addWidget(error_label)
@@ -233,6 +238,8 @@ class DocumentViewer(QWidget):
         if self.current_document and self.current_page > 0:
             self.current_page -= 1
             self.display_document()
+            return True
+        return False
 
     def next_page(self):
         """Navigate to next page."""
@@ -242,8 +249,23 @@ class DocumentViewer(QWidget):
                 if self.current_page < page_count - 1:
                     self.current_page += 1
                     self.display_document()
+                    return True
             except:
                 pass
+        return False
+
+    def get_current_page(self):
+        """Get current page number (1-based)."""
+        return self.current_page + 1
+
+    def get_total_pages(self):
+        """Get total number of pages."""
+        if self.current_document:
+            try:
+                return self.current_document.get_page_count()
+            except:
+                pass
+        return 0
 
     def zoom_in(self):
         """Zoom in on the document."""

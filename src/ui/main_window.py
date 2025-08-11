@@ -91,97 +91,97 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(document_widget)
 
     def create_minimal_toolbar(self, parent_layout):
-        """Create a minimal, clean toolbar."""
-        from qfluentwidgets import (ToolButton, FluentIcon as FIF, CardWidget)
+        """Create an extremely minimal, professional toolbar."""
+        from qfluentwidgets import (ToolButton, FluentIcon as FIF, CaptionLabel)
 
-        # Create minimal toolbar
-        toolbar = CardWidget()
-        toolbar.setFixedHeight(60)
+        # Create ultra-minimal toolbar - reduced height for more document space
+        toolbar = QWidget()
+        toolbar.setFixedHeight(45)
         toolbar.setStyleSheet("""
-            CardWidget {
-                background-color: #F8F8F8;
-                border: none;
-                border-bottom: 1px solid #E0E0E0;
-                border-radius: 0px;
-                margin: 0px;
-                padding: 0px;
+            QWidget {
+                background-color: #FAFAFA;
+                border-bottom: 1px solid #E5E5E5;
             }
         """)
 
         toolbar_layout = QHBoxLayout(toolbar)
-        toolbar_layout.setContentsMargins(20, 10, 20, 10)
-        toolbar_layout.setSpacing(15)
+        toolbar_layout.setContentsMargins(15, 8, 15, 8)
+        toolbar_layout.setSpacing(8)
 
-        # Home button
+        # Essential buttons only - icon-only for space efficiency
         home_btn = ToolButton(FIF.HOME)
-        home_btn.setText("Home")
-        home_btn.setToolTip("Return to home screen")
+        home_btn.setToolTip("Home (Alt+H)")
         home_btn.clicked.connect(self.show_welcome)
         toolbar_layout.addWidget(home_btn)
 
-        # Separator
-        toolbar_layout.addWidget(self.create_separator())
-
-        # File operations
         open_btn = ToolButton(FIF.FOLDER)
-        open_btn.setText("Open")
-        open_btn.setToolTip("Open document (Ctrl+O)")
+        open_btn.setToolTip("Open Document (Ctrl+O)")
         open_btn.clicked.connect(self.open_file)
         toolbar_layout.addWidget(open_btn)
 
-        # Separator
-        toolbar_layout.addWidget(self.create_separator())
+        # Minimal separator
+        sep1 = QWidget()
+        sep1.setFixedSize(1, 25)
+        sep1.setStyleSheet("background-color: #D5D5D5;")
+        toolbar_layout.addWidget(sep1)
 
-        # Navigation
+        # Navigation - essential for document viewing
         prev_btn = ToolButton(FIF.LEFT_ARROW)
-        prev_btn.setText("Previous")
-        prev_btn.setToolTip("Previous page (Left Arrow)")
+        prev_btn.setToolTip("Previous Page (←)")
         prev_btn.clicked.connect(self.previous_page)
         toolbar_layout.addWidget(prev_btn)
 
         next_btn = ToolButton(FIF.RIGHT_ARROW)
-        next_btn.setText("Next")
-        next_btn.setToolTip("Next page (Right Arrow)")
+        next_btn.setToolTip("Next Page (→)")
         next_btn.clicked.connect(self.next_page)
         toolbar_layout.addWidget(next_btn)
 
-        # Separator
-        toolbar_layout.addWidget(self.create_separator())
+        # Page info - minimal and unobtrusive
+        self.page_info = CaptionLabel("No document")
+        self.page_info.setStyleSheet("""
+            CaptionLabel {
+                color: #666666;
+                font-size: 11px;
+                padding: 4px 8px;
+                background-color: transparent;
+            }
+        """)
+        toolbar_layout.addWidget(self.page_info)
 
-        # Zoom controls
+        toolbar_layout.addStretch()
+
+        # Zoom controls - minimal
         zoom_out_btn = ToolButton(FIF.ZOOM_OUT)
-        zoom_out_btn.setText("Zoom Out")
-        zoom_out_btn.setToolTip("Zoom out (Ctrl+-)")
+        zoom_out_btn.setToolTip("Zoom Out (Ctrl+-)")
         zoom_out_btn.clicked.connect(self.zoom_out)
         toolbar_layout.addWidget(zoom_out_btn)
 
         zoom_in_btn = ToolButton(FIF.ZOOM_IN)
-        zoom_in_btn.setText("Zoom In")
-        zoom_in_btn.setToolTip("Zoom in (Ctrl++)")
+        zoom_in_btn.setToolTip("Zoom In (Ctrl++)")
         zoom_in_btn.clicked.connect(self.zoom_in)
         toolbar_layout.addWidget(zoom_in_btn)
 
         fit_btn = ToolButton(FIF.FULL_SCREEN)
-        fit_btn.setText("Fit Page")
-        fit_btn.setToolTip("Fit page to window")
+        fit_btn.setToolTip("Fit to Window (Ctrl+0)")
         fit_btn.clicked.connect(self.fit_to_window)
         toolbar_layout.addWidget(fit_btn)
 
-        toolbar_layout.addStretch()
-
-        # Apply minimal button styling
+        # Ultra-minimal button styling - no text, smaller size
         button_style = """
             ToolButton {
                 background-color: transparent;
-                border: 1px solid transparent;
-                border-radius: 4px;
-                padding: 8px 12px;
-                font-size: 12px;
-                color: #333333;
+                border: none;
+                border-radius: 3px;
+                padding: 6px;
+                margin: 1px;
+                color: #555555;
+                min-width: 28px;
+                max-width: 28px;
+                min-height: 28px;
+                max-height: 28px;
             }
             ToolButton:hover {
-                background-color: #E8E8E8;
-                border: 1px solid #D0D0D0;
+                background-color: #E0E0E0;
             }
             ToolButton:pressed {
                 background-color: #D0D0D0;
@@ -193,29 +193,34 @@ class MainWindow(QMainWindow):
 
         parent_layout.addWidget(toolbar)
 
-    def create_separator(self):
-        """Create a minimal separator."""
-        separator = QWidget()
-        separator.setFixedWidth(1)
-        separator.setFixedHeight(30)
-        separator.setStyleSheet("""
-            QWidget {
-                background-color: #D0D0D0;
-                margin: 5px 0px;
-            }
-        """)
-        return separator
+    def update_page_info(self, current_page=None, total_pages=None):
+        """Update the minimal page info display."""
+        if hasattr(self, 'page_info'):
+            if current_page and total_pages:
+                self.page_info.setText(f"{current_page}/{total_pages}")
+            else:
+                self.page_info.setText("No document")
 
     def setup_shortcuts(self):
-        """Setup keyboard shortcuts."""
+        """Setup comprehensive keyboard shortcuts for professional use."""
         # File operations
         open_action = QAction(self)
         open_action.setShortcut(QKeySequence.Open)
         open_action.triggered.connect(self.open_file)
         self.addAction(open_action)
 
-        # Navigation
+        # Home shortcut
+        home_action = QAction(self)
         if QT_VERSION == 6:
+            home_action.setShortcut(QKeySequence(Qt.Modifier.ALT | Qt.Key.Key_H))
+        else:
+            home_action.setShortcut(QKeySequence(Qt.ALT | Qt.Key_H))
+        home_action.triggered.connect(self.show_welcome)
+        self.addAction(home_action)
+
+        # Navigation shortcuts
+        if QT_VERSION == 6:
+            # Arrow keys
             left_action = QAction(self)
             left_action.setShortcut(Qt.Key.Key_Left)
             left_action.triggered.connect(self.previous_page)
@@ -225,7 +230,36 @@ class MainWindow(QMainWindow):
             right_action.setShortcut(Qt.Key.Key_Right)
             right_action.triggered.connect(self.next_page)
             self.addAction(right_action)
+
+            # Page Up/Down
+            page_up_action = QAction(self)
+            page_up_action.setShortcut(Qt.Key.Key_PageUp)
+            page_up_action.triggered.connect(self.previous_page)
+            self.addAction(page_up_action)
+
+            page_down_action = QAction(self)
+            page_down_action.setShortcut(Qt.Key.Key_PageDown)
+            page_down_action.triggered.connect(self.next_page)
+            self.addAction(page_down_action)
+
+            # Zoom shortcuts
+            zoom_in_action = QAction(self)
+            zoom_in_action.setShortcut(QKeySequence.ZoomIn)
+            zoom_in_action.triggered.connect(self.zoom_in)
+            self.addAction(zoom_in_action)
+
+            zoom_out_action = QAction(self)
+            zoom_out_action.setShortcut(QKeySequence.ZoomOut)
+            zoom_out_action.triggered.connect(self.zoom_out)
+            self.addAction(zoom_out_action)
+
+            # Fit to window
+            fit_action = QAction(self)
+            fit_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_0))
+            fit_action.triggered.connect(self.fit_to_window)
+            self.addAction(fit_action)
         else:
+            # Arrow keys
             left_action = QAction(self)
             left_action.setShortcut(Qt.Key_Left)
             left_action.triggered.connect(self.previous_page)
@@ -235,6 +269,34 @@ class MainWindow(QMainWindow):
             right_action.setShortcut(Qt.Key_Right)
             right_action.triggered.connect(self.next_page)
             self.addAction(right_action)
+
+            # Page Up/Down
+            page_up_action = QAction(self)
+            page_up_action.setShortcut(Qt.Key_PageUp)
+            page_up_action.triggered.connect(self.previous_page)
+            self.addAction(page_up_action)
+
+            page_down_action = QAction(self)
+            page_down_action.setShortcut(Qt.Key_PageDown)
+            page_down_action.triggered.connect(self.next_page)
+            self.addAction(page_down_action)
+
+            # Zoom shortcuts
+            zoom_in_action = QAction(self)
+            zoom_in_action.setShortcut(QKeySequence.ZoomIn)
+            zoom_in_action.triggered.connect(self.zoom_in)
+            self.addAction(zoom_in_action)
+
+            zoom_out_action = QAction(self)
+            zoom_out_action.setShortcut(QKeySequence.ZoomOut)
+            zoom_out_action.triggered.connect(self.zoom_out)
+            self.addAction(zoom_out_action)
+
+            # Fit to window
+            fit_action = QAction(self)
+            fit_action.setShortcut(QKeySequence(Qt.CTRL | Qt.Key_0))
+            fit_action.triggered.connect(self.fit_to_window)
+            self.addAction(fit_action)
 
     def ensure_document_viewer(self):
         """Ensure document viewer is created when needed."""
@@ -295,9 +357,10 @@ class MainWindow(QMainWindow):
                 # Switch to document view
                 self.show_document()
                 
-                # Update window title
+                # Update window title and page info
                 filename = Path(file_path).name
                 self.setWindowTitle(f"Modern EBook Reader - {filename}")
+                self.update_page_info_display()
                 
                 logger.info("Document loaded successfully: %s", filename)
 
@@ -307,13 +370,20 @@ class MainWindow(QMainWindow):
 
     def previous_page(self):
         """Navigate to previous page."""
-        if self.document_viewer:
-            self.document_viewer.previous_page()
+        if self.document_viewer and self.document_viewer.previous_page():
+            self.update_page_info_display()
 
     def next_page(self):
         """Navigate to next page."""
+        if self.document_viewer and self.document_viewer.next_page():
+            self.update_page_info_display()
+
+    def update_page_info_display(self):
+        """Update page info display after navigation."""
         if self.document_viewer:
-            self.document_viewer.next_page()
+            current = self.document_viewer.get_current_page()
+            total = self.document_viewer.get_total_pages()
+            self.update_page_info(current, total)
 
     def zoom_in(self):
         """Zoom in."""
