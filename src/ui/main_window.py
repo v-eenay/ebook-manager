@@ -1,224 +1,257 @@
 """
 Main Window for Modern EBook Reader
-Complete Fluent Design implementation with document support.
+Clean, minimal, professional design focused on document viewing.
 """
 
-import os
 from pathlib import Path
 
 try:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QMessageBox, QStackedWidget
+    from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget
     from PyQt6.QtCore import Qt, pyqtSignal
-    from PyQt6.QtGui import QIcon
+    from PyQt6.QtGui import QIcon, QKeySequence, QAction
     QT_VERSION = 6
 except ImportError:
-    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QMessageBox, QStackedWidget
+    from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget
     from PyQt5.QtCore import Qt, pyqtSignal
-    from PyQt5.QtGui import QIcon
+    from PyQt5.QtGui import QIcon, QKeySequence, QAction
     QT_VERSION = 5
 
-class MainWindow(QWidget):
-    """Main window with complete Fluent Design implementation."""
+# Logger
+try:
+    from utils.logger import setup_logging
+    logger = setup_logging()
+except Exception:
+    import logging
+    logger = logging.getLogger("ebook_reader")
+
+class MainWindow(QMainWindow):
+    """Main window with clean, minimal design focused on document viewing."""
 
     def __init__(self):
         super().__init__()
-        # Import document manager inside method to avoid widget construction during import
-        from readers.document_manager import DocumentManager
-        self.document_manager = DocumentManager()
         self.current_document = None
+        self.document_manager = None
         self.init_ui()
+        self.setup_shortcuts()
 
     def init_ui(self):
-        """Initialize the user interface with Fluent Design."""
-        # Import Fluent Design components inside the method
-        from qfluentwidgets import (
-            PrimaryPushButton, TitleLabel, BodyLabel, CardWidget,
-            FluentIcon as FIF, InfoBar, InfoBarPosition,
-            ToolButton, TransparentToolButton
-        )
-
-        self.setWindowTitle("Modern EBook Reader - Fluent Design")
+        """Initialize the clean, minimal user interface."""
+        self.setWindowTitle("Modern EBook Reader")
         self.setMinimumSize(1000, 700)
         self.resize(1200, 800)
 
-        # Create main layout
-        main_layout = QHBoxLayout(self)
+        # Create central widget and main layout
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Create navigation panel with simple buttons
-        nav_panel = QWidget()
-        nav_panel.setFixedWidth(200)
-        nav_panel.setStyleSheet("""
-            QWidget {
-                background-color: #F3F3F3;
-                border-right: 1px solid #E0E0E0;
-            }
-        """)
-
-        nav_layout = QVBoxLayout(nav_panel)
-        nav_layout.setContentsMargins(10, 20, 10, 20)
-        nav_layout.setSpacing(10)
-
-        # Navigation title
-        nav_title = TitleLabel("Navigation")
-        nav_layout.addWidget(nav_title)
-
-        # Navigation buttons
-        self.welcome_btn = ToolButton(FIF.HOME, self)
-        self.welcome_btn.setText("Welcome")
-        self.welcome_btn.clicked.connect(self.show_welcome)
-        nav_layout.addWidget(self.welcome_btn)
-
-        self.reader_btn = ToolButton(FIF.BOOK_SHELF, self)
-        self.reader_btn.setText("Reader")
-        self.reader_btn.clicked.connect(self.show_reader)
-        nav_layout.addWidget(self.reader_btn)
-
-        nav_layout.addStretch()
-
-        self.settings_btn = ToolButton(FIF.SETTING, self)
-        self.settings_btn.setText("Settings")
-        self.settings_btn.clicked.connect(self.show_settings)
-        nav_layout.addWidget(self.settings_btn)
-
-        # Create content area
-        self.content_stack = QStackedWidget()
+        # Create stacked widget for different views
+        self.stacked_widget = QStackedWidget()
+        main_layout.addWidget(self.stacked_widget)
 
         # Create welcome page
         self.create_welcome_page()
 
-        # Create reader page
-        self.create_reader_page()
+        # Create document viewer page
+        self.create_document_page()
 
-        # Add to main layout
-        main_layout.addWidget(nav_panel)
-        main_layout.addWidget(self.content_stack, 1)
-
-        # Set welcome as default
-        self.content_stack.setCurrentWidget(self.welcome_page)
+        # Start with welcome page
+        self.stacked_widget.setCurrentIndex(0)
 
     def create_welcome_page(self):
-        """Create the welcome page with Fluent Design."""
-        from qfluentwidgets import (
-            PrimaryPushButton, TitleLabel, BodyLabel, CardWidget,
-            FluentIcon as FIF, CaptionLabel
-        )
+        """Create a clean, minimal welcome page."""
+        from ui.welcome_widget import WelcomeWidget
+        
+        self.welcome_widget = WelcomeWidget()
+        self.welcome_widget.open_file_requested.connect(self.open_file)
+        self.welcome_widget.open_recent_requested.connect(self.load_document)
+        
+        self.stacked_widget.addWidget(self.welcome_widget)
 
-        self.welcome_page = QWidget()
-        layout = QVBoxLayout(self.welcome_page)
-        layout.setContentsMargins(40, 40, 40, 40)
-        layout.setSpacing(30)
+    def create_document_page(self):
+        """Create the document viewer page."""
+        document_widget = QWidget()
+        layout = QVBoxLayout(document_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        # Create title
-        title = TitleLabel("Modern EBook Reader")
+        # Create minimal toolbar
+        self.create_minimal_toolbar(layout)
+
+        # Create document viewer (lazy loading)
+        self.document_viewer = None
+        self.document_viewer_container = QWidget()
+        self.document_viewer_layout = QVBoxLayout(self.document_viewer_container)
+        self.document_viewer_layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.document_viewer_container)
+
+        self.stacked_widget.addWidget(document_widget)
+
+    def create_minimal_toolbar(self, parent_layout):
+        """Create a minimal, clean toolbar."""
+        from qfluentwidgets import (ToolButton, FluentIcon as FIF, CardWidget)
+
+        # Create minimal toolbar
+        toolbar = CardWidget()
+        toolbar.setFixedHeight(60)
+        toolbar.setStyleSheet("""
+            CardWidget {
+                background-color: #F8F8F8;
+                border: none;
+                border-bottom: 1px solid #E0E0E0;
+                border-radius: 0px;
+                margin: 0px;
+                padding: 0px;
+            }
+        """)
+
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(20, 10, 20, 10)
+        toolbar_layout.setSpacing(15)
+
+        # Home button
+        home_btn = ToolButton(FIF.HOME)
+        home_btn.setText("Home")
+        home_btn.setToolTip("Return to home screen")
+        home_btn.clicked.connect(self.show_welcome)
+        toolbar_layout.addWidget(home_btn)
+
+        # Separator
+        toolbar_layout.addWidget(self.create_separator())
+
+        # File operations
+        open_btn = ToolButton(FIF.FOLDER)
+        open_btn.setText("Open")
+        open_btn.setToolTip("Open document (Ctrl+O)")
+        open_btn.clicked.connect(self.open_file)
+        toolbar_layout.addWidget(open_btn)
+
+        # Separator
+        toolbar_layout.addWidget(self.create_separator())
+
+        # Navigation
+        prev_btn = ToolButton(FIF.LEFT_ARROW)
+        prev_btn.setText("Previous")
+        prev_btn.setToolTip("Previous page (Left Arrow)")
+        prev_btn.clicked.connect(self.previous_page)
+        toolbar_layout.addWidget(prev_btn)
+
+        next_btn = ToolButton(FIF.RIGHT_ARROW)
+        next_btn.setText("Next")
+        next_btn.setToolTip("Next page (Right Arrow)")
+        next_btn.clicked.connect(self.next_page)
+        toolbar_layout.addWidget(next_btn)
+
+        # Separator
+        toolbar_layout.addWidget(self.create_separator())
+
+        # Zoom controls
+        zoom_out_btn = ToolButton(FIF.ZOOM_OUT)
+        zoom_out_btn.setText("Zoom Out")
+        zoom_out_btn.setToolTip("Zoom out (Ctrl+-)")
+        zoom_out_btn.clicked.connect(self.zoom_out)
+        toolbar_layout.addWidget(zoom_out_btn)
+
+        zoom_in_btn = ToolButton(FIF.ZOOM_IN)
+        zoom_in_btn.setText("Zoom In")
+        zoom_in_btn.setToolTip("Zoom in (Ctrl++)")
+        zoom_in_btn.clicked.connect(self.zoom_in)
+        toolbar_layout.addWidget(zoom_in_btn)
+
+        fit_btn = ToolButton(FIF.FULL_SCREEN)
+        fit_btn.setText("Fit Page")
+        fit_btn.setToolTip("Fit page to window")
+        fit_btn.clicked.connect(self.fit_to_window)
+        toolbar_layout.addWidget(fit_btn)
+
+        toolbar_layout.addStretch()
+
+        # Apply minimal button styling
+        button_style = """
+            ToolButton {
+                background-color: transparent;
+                border: 1px solid transparent;
+                border-radius: 4px;
+                padding: 8px 12px;
+                font-size: 12px;
+                color: #333333;
+            }
+            ToolButton:hover {
+                background-color: #E8E8E8;
+                border: 1px solid #D0D0D0;
+            }
+            ToolButton:pressed {
+                background-color: #D0D0D0;
+            }
+        """
+        
+        for button in toolbar.findChildren(ToolButton):
+            button.setStyleSheet(button_style)
+
+        parent_layout.addWidget(toolbar)
+
+    def create_separator(self):
+        """Create a minimal separator."""
+        separator = QWidget()
+        separator.setFixedWidth(1)
+        separator.setFixedHeight(30)
+        separator.setStyleSheet("""
+            QWidget {
+                background-color: #D0D0D0;
+                margin: 5px 0px;
+            }
+        """)
+        return separator
+
+    def setup_shortcuts(self):
+        """Setup keyboard shortcuts."""
+        # File operations
+        open_action = QAction(self)
+        open_action.setShortcut(QKeySequence.Open)
+        open_action.triggered.connect(self.open_file)
+        self.addAction(open_action)
+
+        # Navigation
         if QT_VERSION == 6:
-            title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            left_action = QAction(self)
+            left_action.setShortcut(Qt.Key.Key_Left)
+            left_action.triggered.connect(self.previous_page)
+            self.addAction(left_action)
+
+            right_action = QAction(self)
+            right_action.setShortcut(Qt.Key.Key_Right)
+            right_action.triggered.connect(self.next_page)
+            self.addAction(right_action)
         else:
-            title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+            left_action = QAction(self)
+            left_action.setShortcut(Qt.Key_Left)
+            left_action.triggered.connect(self.previous_page)
+            self.addAction(left_action)
 
-        # Create welcome card
-        welcome_card = CardWidget()
-        welcome_card.setMaximumWidth(600)
-        card_layout = QVBoxLayout(welcome_card)
-        card_layout.setContentsMargins(40, 40, 40, 40)
-        card_layout.setSpacing(20)
+            right_action = QAction(self)
+            right_action.setShortcut(Qt.Key_Right)
+            right_action.triggered.connect(self.next_page)
+            self.addAction(right_action)
 
-        # Welcome content
-        welcome_text = BodyLabel(
-            "Experience modern document reading with Microsoft Fluent Design System.\n\n"
-            "Features:\n"
-            "• PDF, EPUB, and MOBI support\n"
-            "• Windows 11-style interface\n"
-            "• Smooth animations and effects\n"
-            "• High contrast accessibility\n"
-            "• Modern navigation experience"
-        )
-        welcome_text.setWordWrap(True)
-        if QT_VERSION == 6:
-            welcome_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            welcome_text.setAlignment(Qt.AlignCenter)
-        card_layout.addWidget(welcome_text)
-
-        # Open document button
-        self.open_button = PrimaryPushButton("Open Document", FIF.FOLDER)
-        self.open_button.setMinimumWidth(200)
-        self.open_button.clicked.connect(self.open_file)
-        card_layout.addWidget(self.open_button)
-
-        # Supported formats
-        formats_label = CaptionLabel("Supported formats: PDF, EPUB, MOBI")
-        if QT_VERSION == 6:
-            formats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            formats_label.setAlignment(Qt.AlignCenter)
-        card_layout.addWidget(formats_label)
-
-        # Center the card
-        card_container = QHBoxLayout()
-        card_container.addStretch()
-        card_container.addWidget(welcome_card)
-        card_container.addStretch()
-
-        layout.addLayout(card_container)
-        layout.addStretch()
-
-        self.content_stack.addWidget(self.welcome_page)
-
-    def create_reader_page(self):
-        """Create the reader page with Fluent Design and embed the DocumentViewer."""
-        from qfluentwidgets import BodyLabel, CardWidget
-
-        self.reader_page = QWidget()
-        layout = QVBoxLayout(self.reader_page)
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        # Create reader card
-        reader_card = CardWidget()
-        reader_layout = QVBoxLayout(reader_card)
-        reader_layout.setContentsMargins(10, 10, 10, 10)
-
-        # Lazy-create the document viewer container
-        from ui.document_viewer import DocumentViewer
-        self.document_viewer = DocumentViewer(self)
-        reader_layout.addWidget(self.document_viewer)
-
-        # Fallback/info label shown when no document is loaded
-        self.reader_content = BodyLabel("No document loaded. Please open a document from the Welcome page.")
-        self.reader_content.setWordWrap(True)
-        if QT_VERSION == 6:
-            self.reader_content.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            self.reader_content.setAlignment(Qt.AlignCenter)
-        # Start with info label visible until a document is loaded
-        self.reader_content.setVisible(True)
-        reader_layout.addWidget(self.reader_content)
-
-        layout.addWidget(reader_card)
-        self.content_stack.addWidget(self.reader_page)
+    def ensure_document_viewer(self):
+        """Ensure document viewer is created when needed."""
+        if self.document_viewer is None:
+            logger.info("Creating DocumentViewer...")
+            from ui.document_viewer import DocumentViewer
+            self.document_viewer = DocumentViewer()
+            self.document_viewer_layout.addWidget(self.document_viewer)
+            logger.info("DocumentViewer created successfully")
 
     def show_welcome(self):
         """Show the welcome page."""
-        self.content_stack.setCurrentWidget(self.welcome_page)
+        self.stacked_widget.setCurrentIndex(0)
 
-    def show_reader(self):
-        """Show the reader page."""
-        self.content_stack.setCurrentWidget(self.reader_page)
-
-    def show_settings(self):
-        """Show settings (placeholder)."""
-        from qfluentwidgets import InfoBar, InfoBarPosition
-        InfoBar.info(
-            title="Settings",
-            content="Settings panel coming soon!",
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=2000,
-            parent=self
-        )
+    def show_document(self):
+        """Show the document viewer page."""
+        self.stacked_widget.setCurrentIndex(1)
 
     def open_file(self):
         """Open a document file."""
@@ -233,75 +266,72 @@ class MainWindow(QWidget):
             self.load_document(file_path)
 
     def load_document(self, file_path):
-        """Load a document and display it in the embedded DocumentViewer."""
-        from qfluentwidgets import InfoBar, InfoBarPosition
-        import traceback
-
+        """Load and display a document."""
         try:
-            # Load document using document manager
-            document = self.document_manager.load_document(file_path)
-            if document:
-                self.current_document = document
+            # Import document manager
+            from readers.document_manager import DocumentManager
+            from utils.settings import add_recent_book
+            
+            if not self.document_manager:
+                self.document_manager = DocumentManager()
 
-                # Ensure the document viewer exists and load the document into it
-                if hasattr(self, 'document_viewer') and self.document_viewer is not None:
-                    try:
-                        self.document_viewer.load_document(self.current_document)
-                    except Exception as display_error:
-                        # Detailed error and fallback
-                        tb_str = traceback.format_exc()
-                        from qfluentwidgets import InfoBar
-                        InfoBar.error(
-                            title="Display Error",
-                            content=(
-                                "Failed to display the document. This may be due to graphics initialization issues or an unsupported format. "
-                                "Please try restarting the app or opening a different file. See log for details."
-                            ),
-                            orient=Qt.Horizontal,
-                            isClosable=True,
-                            position=InfoBarPosition.TOP,
-                            duration=6000,
-                            parent=self
-                        )
-                        try:
-                            from utils.logger import setup_logging
-                            setup_logging().error("Display error: %s\n%s", display_error, tb_str)
-                        except Exception:
-                            pass
-
-                # Hide the placeholder info label once a document is loaded
-                if hasattr(self, 'reader_content'):
-                    self.reader_content.setVisible(False)
-
-                # Switch to reader view
-                self.show_reader()
-
-                # Show success message
-                InfoBar.success(
-                    title="Document Loaded",
-                    content=f"Successfully opened {Path(file_path).name}",
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=3000,
-                    parent=self
-                )
+            # Load document
+            self.current_document = self.document_manager.load_document(file_path)
+            
+            if self.current_document:
+                # Add to recent books
+                add_recent_book(file_path)
+                
+                # Update welcome widget recent books
+                if hasattr(self, 'welcome_widget'):
+                    self.welcome_widget.add_recent_book(file_path)
+                
+                # Ensure document viewer exists
+                self.ensure_document_viewer()
+                
+                # Load document into viewer
+                self.document_viewer.load_document(self.current_document)
+                
+                # Switch to document view
+                self.show_document()
+                
+                # Update window title
+                filename = Path(file_path).name
+                self.setWindowTitle(f"Modern EBook Reader - {filename}")
+                
+                logger.info("Document loaded successfully: %s", filename)
 
         except Exception as e:
-            # Show error message
-            InfoBar.error(
-                title="Error Loading Document",
-                content=f"Failed to load document: {str(e)}",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=5000,
-                parent=self
-            )
+            logger.exception("Error loading document: %s", e)
+            # TODO: Show error message to user
+
+    def previous_page(self):
+        """Navigate to previous page."""
+        if self.document_viewer:
+            self.document_viewer.previous_page()
+
+    def next_page(self):
+        """Navigate to next page."""
+        if self.document_viewer:
+            self.document_viewer.next_page()
+
+    def zoom_in(self):
+        """Zoom in."""
+        if self.document_viewer:
+            self.document_viewer.zoom_in()
+
+    def zoom_out(self):
+        """Zoom out."""
+        if self.document_viewer:
+            self.document_viewer.zoom_out()
+
+    def fit_to_window(self):
+        """Fit page to window."""
+        if self.document_viewer:
+            self.document_viewer.fit_to_window()
 
     def closeEvent(self, event):
         """Handle window close event."""
-        # Clean up resources
         if self.current_document:
             self.current_document = None
         event.accept()
