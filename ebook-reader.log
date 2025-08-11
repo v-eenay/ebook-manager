@@ -172,3 +172,22 @@ NameError: name 'QLabel' is not defined
 2025-08-11 21:05:25 | INFO     | ebook_reader | main_window.ensure_document_viewer:611 | Creating DocumentViewer...
 2025-08-11 21:05:25 | INFO     | ebook_reader | main_window.ensure_document_viewer:618 | DocumentViewer created successfully
 2025-08-11 21:05:25 | INFO     | ebook_reader | main_window.load_document:683 | Document loaded successfully: UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 21:20:39 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 21:20:39 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 21:20:39 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-11 21:20:39 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 21:20:39 | INFO     | ebook_reader | main_window.ensure_document_viewer:611 | Creating DocumentViewer...
+2025-08-11 21:20:39 | INFO     | ebook_reader | main_window.ensure_document_viewer:618 | DocumentViewer created successfully
+2025-08-11 21:20:39 | INFO     | ebook_reader | main_window.load_document:683 | Document loaded successfully: test_document.pdf
+2025-08-11 21:58:59 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 21:58:59 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 21:58:59 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-11 21:58:59 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 21:58:59 | INFO     | ebook_reader | main_window.ensure_document_viewer:647 | Creating DocumentViewer...
+2025-08-11 21:58:59 | INFO     | ebook_reader | main_window.ensure_document_viewer:654 | DocumentViewer created successfully
+2025-08-11 21:58:59 | INFO     | ebook_reader | main_window.load_document:733 | Document loaded successfully: test_document.pdf
+2025-08-11 21:59:33 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 21:59:33 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 21:59:33 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf (1 pages)
+2025-08-11 21:59:33 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 21:59:33 | INFO     | ebook_reader | main_window.load_document:733 | Document loaded successfully: UPC-03 Class Time Schedule - (Week 1-3).pdf

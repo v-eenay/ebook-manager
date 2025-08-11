@@ -219,6 +219,12 @@ class MainWindow(QMainWindow):
         sep2.setStyleSheet("background-color: #D5D5D5;")
         toolbar_layout.addWidget(sep2)
 
+        # View mode toggle
+        self.view_mode_btn = QPushButton("📄")
+        self.view_mode_btn.setToolTip("Switch to Continuous View (Ctrl+M)")
+        self.view_mode_btn.clicked.connect(self.toggle_view_mode)
+        toolbar_layout.addWidget(self.view_mode_btn)
+
         # Search functionality
         search_btn = QPushButton("🔍")
         search_btn.setToolTip("Search in document (Ctrl+F)")
@@ -486,6 +492,30 @@ class MainWindow(QMainWindow):
         elif self.isFullScreen():
             self.showNormal()
 
+    def toggle_view_mode(self):
+        """Toggle between page mode and continuous mode."""
+        if not self.document_viewer or not self.document_viewer.current_document:
+            return
+            
+        current_mode = self.document_viewer.get_view_mode()
+        if current_mode == "page":
+            # Switch to continuous mode
+            self.document_viewer.set_view_mode("continuous")
+            self.view_mode_btn.setText("📜")
+            self.view_mode_btn.setToolTip("Switch to Page View (Ctrl+M)")
+        else:
+            # Switch to page mode
+            self.document_viewer.set_view_mode("page")
+            self.view_mode_btn.setText("📄")
+            self.view_mode_btn.setToolTip("Switch to Continuous View (Ctrl+M)")
+            
+        # Save preference
+        try:
+            from utils.settings import set_setting
+            set_setting("view_mode", self.document_viewer.get_view_mode())
+        except:
+            pass
+
     def setup_drag_drop(self):
         """Setup drag and drop functionality."""
         self.setAcceptDrops(True)
@@ -596,6 +626,12 @@ class MainWindow(QMainWindow):
         fullscreen_action.triggered.connect(self.toggle_fullscreen)
         self.addAction(fullscreen_action)
 
+        # View mode toggle
+        view_mode_action = QAction(self)
+        view_mode_action.setShortcut(QKeySequence(Qt.CTRL | Qt.Key_M))
+        view_mode_action.triggered.connect(self.toggle_view_mode)
+        self.addAction(view_mode_action)
+
         # Escape key to close search or exit fullscreen
         escape_action = QAction(self)
         escape_action.setShortcut(Qt.Key_Escape)
@@ -676,6 +712,20 @@ class MainWindow(QMainWindow):
                 
                 # Initialize zoom info
                 self.update_zoom_info(self.document_viewer.zoom_level)
+                
+                # Set initial view mode from settings
+                try:
+                    from utils.settings import get_setting
+                    saved_mode = get_setting("view_mode", "page")
+                    self.document_viewer.set_view_mode(saved_mode)
+                    if saved_mode == "continuous":
+                        self.view_mode_btn.setText("📜")
+                        self.view_mode_btn.setToolTip("Switch to Page View (Ctrl+M)")
+                    else:
+                        self.view_mode_btn.setText("📄")
+                        self.view_mode_btn.setToolTip("Switch to Continuous View (Ctrl+M)")
+                except:
+                    pass
                 
                 try:
                     from utils.logger import setup_logging

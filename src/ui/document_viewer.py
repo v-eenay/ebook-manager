@@ -28,6 +28,7 @@ class DocumentViewer(QWidget):
         self.search_text_current = ""
         self.search_matches = []
         self.current_match_index = -1
+        self.view_mode = "page"  # "page" or "continuous"
         self.init_ui()
 
     def init_ui(self):
@@ -98,13 +99,25 @@ class DocumentViewer(QWidget):
         self.display_document()
 
     def display_document(self):
-        """Display the current document."""
+        """Display the current document based on view mode."""
         if not self.current_document:
             return
 
         # Clear existing content
         self.clear_content()
 
+        try:
+            if self.view_mode == "continuous":
+                self.display_continuous_mode()
+            else:
+                self.display_page_mode()
+
+        except Exception as e:
+            logger.exception("Error displaying document: %s", e)
+            self.display_error(f"Error displaying document: {str(e)}")
+
+    def display_page_mode(self):
+        """Display document in page mode (current page only)."""
         try:
             # Handle PDF documents
             if hasattr(self.current_document, 'get_page_image_data'):
@@ -114,10 +127,130 @@ class DocumentViewer(QWidget):
                 self.display_text_page()
             else:
                 self.display_error("Unsupported document format")
-
         except Exception as e:
-            logger.exception("Error displaying document: %s", e)
-            self.display_error(f"Error displaying document: {str(e)}")
+            logger.exception("Error displaying page mode: %s", e)
+            self.display_error(f"Error displaying page: {str(e)}")
+
+    def display_continuous_mode(self):
+        """Display document in continuous mode (all pages)."""
+        try:
+            page_count = self.current_document.get_page_count()
+            
+            # Handle PDF documents
+            if hasattr(self.current_document, 'get_page_image_data'):
+                self.display_continuous_pdf(page_count)
+            # Handle text-based documents
+            elif hasattr(self.current_document, 'get_page_text'):
+                self.display_continuous_text(page_count)
+            else:
+                self.display_error("Unsupported document format")
+                
+        except Exception as e:
+            logger.exception("Error displaying continuous mode: %s", e)
+            self.display_error(f"Error displaying continuous view: {str(e)}")
+
+    def display_continuous_pdf(self, page_count):
+        """Display all PDF pages in continuous mode."""
+        for page_num in range(page_count):
+            try:
+                # Get image data from PDF reader
+                img_data, _, _ = self.current_document.get_page_image_data(page_num)
+
+                # Create QImage from raw data
+                qimg = QImage.fromData(img_data)
+                if qimg.isNull():
+                    continue
+
+                # Apply zoom
+                if self.zoom_level != 1.0:
+                    width = int(qimg.width() * self.zoom_level)
+                    height = int(qimg.height() * self.zoom_level)
+                    qimg = qimg.scaled(width, height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                # Create QPixmap from QImage
+                pixmap = QPixmap.fromImage(qimg)
+                if pixmap.isNull():
+                    continue
+
+                # Create label with page styling
+                page_label = QLabel()
+                page_label.setPixmap(pixmap)
+                page_label.setAlignment(Qt.AlignCenter)
+                page_label.setStyleSheet("""
+                    QLabel {
+                        background-color: white;
+                        border: 1px solid #F0F0F0;
+                        padding: 5px;
+                        margin: 10px 5px;
+                    }
+                """)
+
+                # Add page number indicator for continuous mode
+                page_info = QLabel(f"Page {page_num + 1}")
+                page_info.setAlignment(Qt.AlignCenter)
+                page_info.setStyleSheet("""
+                    QLabel {
+                        color: #999999;
+                        font-size: 12px;
+                        font-weight: 500;
+                        padding: 5px;
+                        margin: 5px;
+                        background-color: transparent;
+                    }
+                """)
+
+                self.content_layout.addWidget(page_info)
+                self.content_layout.addWidget(page_label)
+
+            except Exception as e:
+                logger.exception("Error displaying PDF page %d in continuous mode: %s", page_num, e)
+                continue
+
+    def display_continuous_text(self, page_count):
+        """Display all text pages in continuous mode."""
+        # Create a single large text widget with all content
+        all_text = []
+        
+        for page_num in range(page_count):
+            try:
+                text = self.current_document.get_page_text(page_num)
+                all_text.append(f"--- Page {page_num + 1} ---\n\n{text}\n\n")
+            except Exception as e:
+                logger.exception("Error getting text for page %d: %s", page_num, e)
+                all_text.append(f"--- Page {page_num + 1} ---\n\n[Error loading page]\n\n")
+
+        # Create text display with all content
+        text_display = QTextEdit()
+        text_display.setPlainText("\n".join(all_text))
+        text_display.setReadOnly(True)
+        text_display.setStyleSheet("""
+            QTextEdit {
+                background-color: white;
+                border: 1px solid #F0F0F0;
+                padding: 25px;
+                margin: 5px;
+                font-family: 'Segoe UI', 'Georgia', serif;
+                font-size: 15px;
+                line-height: 1.7;
+                color: #2C2C2C;
+                selection-background-color: #E3F2FD;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: transparent;
+                width: 8px;
+            }
+            QScrollBar::handle:vertical {
+                background: #CCCCCC;
+                border-radius: 4px;
+                min-height: 20px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #AAAAAA;
+            }
+        """)
+
+        self.content_layout.addWidget(text_display)
 
     def display_pdf_page(self):
         """Display a PDF page with minimal, professional styling."""
@@ -230,15 +363,32 @@ class DocumentViewer(QWidget):
 
     def previous_page(self):
         """Navigate to previous page."""
-        if self.current_document and self.current_page > 0:
-            self.current_page -= 1
-            self.display_document()
+        if not self.current_document:
+            return False
+            
+        if self.view_mode == "continuous":
+            # In continuous mode, scroll up by one page height
+            self.scroll_by_page(-1)
             return True
+        else:
+            # In page mode, go to previous page
+            if self.current_page > 0:
+                self.current_page -= 1
+                self.display_document()
+                return True
         return False
 
     def next_page(self):
         """Navigate to next page."""
-        if self.current_document:
+        if not self.current_document:
+            return False
+            
+        if self.view_mode == "continuous":
+            # In continuous mode, scroll down by one page height
+            self.scroll_by_page(1)
+            return True
+        else:
+            # In page mode, go to next page
             try:
                 page_count = self.current_document.get_page_count()
                 if self.current_page < page_count - 1:
@@ -249,9 +399,47 @@ class DocumentViewer(QWidget):
                 pass
         return False
 
+    def scroll_by_page(self, direction):
+        """Scroll by one page height in continuous mode."""
+        if not hasattr(self, 'scroll_area'):
+            return
+            
+        scrollbar = self.scroll_area.verticalScrollBar()
+        page_height = self.scroll_area.viewport().height()
+        current_value = scrollbar.value()
+        
+        if direction > 0:  # Scroll down
+            new_value = min(current_value + page_height, scrollbar.maximum())
+        else:  # Scroll up
+            new_value = max(current_value - page_height, scrollbar.minimum())
+            
+        scrollbar.setValue(new_value)
+
     def get_current_page(self):
         """Get current page number (1-based)."""
-        return self.current_page + 1
+        if self.view_mode == "continuous":
+            # In continuous mode, estimate current page based on scroll position
+            return self.estimate_current_page_from_scroll()
+        else:
+            return self.current_page + 1
+
+    def estimate_current_page_from_scroll(self):
+        """Estimate current page based on scroll position in continuous mode."""
+        if not hasattr(self, 'scroll_area') or not self.current_document:
+            return 1
+            
+        try:
+            scrollbar = self.scroll_area.verticalScrollBar()
+            if scrollbar.maximum() == 0:
+                return 1
+                
+            # Calculate approximate page based on scroll position
+            scroll_ratio = scrollbar.value() / scrollbar.maximum()
+            total_pages = self.current_document.get_page_count()
+            estimated_page = int(scroll_ratio * total_pages) + 1
+            return min(max(estimated_page, 1), total_pages)
+        except:
+            return 1
 
     def get_total_pages(self):
         """Get total number of pages."""
@@ -334,16 +522,41 @@ class DocumentViewer(QWidget):
 
     def jump_to_page(self, page_num):
         """Jump to a specific page (0-based)."""
-        if self.current_document:
-            try:
-                page_count = self.current_document.get_page_count()
-                if 0 <= page_num < page_count:
-                    self.current_page = page_num
-                    self.display_document()
-                    return True
-            except:
-                pass
+        if not self.current_document:
+            return False
+            
+        try:
+            page_count = self.current_document.get_page_count()
+            if not (0 <= page_num < page_count):
+                return False
+                
+            if self.view_mode == "continuous":
+                # In continuous mode, scroll to the approximate position
+                self.scroll_to_page(page_num)
+            else:
+                # In page mode, change current page and redisplay
+                self.current_page = page_num
+                self.display_document()
+            return True
+        except:
+            pass
         return False
+
+    def scroll_to_page(self, page_num):
+        """Scroll to a specific page in continuous mode."""
+        if not hasattr(self, 'scroll_area') or not self.current_document:
+            return
+            
+        try:
+            scrollbar = self.scroll_area.verticalScrollBar()
+            total_pages = self.current_document.get_page_count()
+            
+            # Calculate scroll position based on page number
+            page_ratio = page_num / max(total_pages - 1, 1)
+            target_value = int(page_ratio * scrollbar.maximum())
+            scrollbar.setValue(target_value)
+        except Exception as e:
+            logger.exception("Error scrolling to page %d: %s", page_num, e)
 
     def search_text(self, search_text):
         """Search for text in the document."""
@@ -450,3 +663,19 @@ class DocumentViewer(QWidget):
                     break
         except Exception as e:
             logger.exception("Error clearing search highlights: %s", e)
+
+    def get_view_mode(self):
+        """Get current view mode."""
+        return self.view_mode
+
+    def set_view_mode(self, mode):
+        """Set view mode: 'page' or 'continuous'."""
+        if mode not in ["page", "continuous"]:
+            return
+            
+        old_mode = self.view_mode
+        self.view_mode = mode
+        
+        # If mode changed and we have a document, refresh display
+        if old_mode != mode and self.current_document:
+            self.display_document()
