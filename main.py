@@ -27,7 +27,9 @@ def main():
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtCore import Qt
         
-        from ui.main_window import MainWindow
+        # Set high DPI scaling BEFORE creating QApplication
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
         
         # Create application
         app = QApplication(sys.argv)
@@ -35,9 +37,8 @@ def main():
         app.setApplicationVersion("2.0")
         app.setOrganizationName("EBook Reader")
         
-        # Enable high DPI scaling
-        app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+        # Import MainWindow AFTER QApplication is created to avoid widget creation issues
+        from ui.main_window import MainWindow
         
         # Create and show main window
         window = MainWindow()

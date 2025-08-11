@@ -138,3 +138,17 @@ AttributeError: type object 'FluentIcon' has no attribute 'CHEVRON_LEFT'. Did yo
 2025-08-11 12:59:38 | INFO     | ebook_reader | main.ensure_document_viewer:223 | Creating DocumentViewer...
 2025-08-11 12:59:39 | INFO     | ebook_reader | main.ensure_document_viewer:227 | DocumentViewer created and added to layout
 2025-08-11 12:59:39 | INFO     | ebook_reader | document_viewer.display_document_revolutionary:472 | Displaying 3 pages with revolutionary design
+2025-08-11 19:48:01 | ERROR    | ebook_reader | main.main:51 | Failed to start application: cannot import name 'QAction' from 'PyQt5.QtGui' (C:\Users\koira\AppData\Roaming\Python\Python312\site-packages\PyQt5\QtGui.pyd)
+Traceback (most recent call last):
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\main.py", line 41, in main
+    from ui.main_window import MainWindow
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\src\ui\main_window.py", line 11, in <module>
+    from PyQt5.QtGui import QIcon, QKeySequence, QAction
+ImportError: cannot import name 'QAction' from 'PyQt5.QtGui' (C:\Users\koira\AppData\Roaming\Python\Python312\site-packages\PyQt5\QtGui.pyd)
+2025-08-11 20:40:36 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 20:40:36 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 20:40:36 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-11 20:40:36 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 20:40:36 | INFO     | ebook_reader | main_window.ensure_document_viewer:254 | Creating DocumentViewer...
+2025-08-11 20:40:36 | INFO     | ebook_reader | main_window.ensure_document_viewer:261 | DocumentViewer created successfully
+2025-08-11 20:40:36 | INFO     | ebook_reader | main_window.load_document:323 | Document loaded successfully: test_document.pdf

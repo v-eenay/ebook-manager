@@ -5,16 +5,11 @@ Clean, minimal, professional design focused on document viewing.
 
 from pathlib import Path
 
-try:
-    from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget
-    from PyQt5.QtCore import Qt, pyqtSignal
-    from PyQt5.QtGui import QIcon, QKeySequence, QAction
-    QT_VERSION = 5
-except ImportError:
-    from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget
-    from PyQt6.QtCore import Qt, pyqtSignal
-    from PyQt6.QtGui import QIcon, QKeySequence, QAction
-    QT_VERSION = 6
+# Force PyQt5 for compatibility
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget, QAction
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QIcon, QKeySequence
+QT_VERSION = 5
 
 # Logger will be imported inside methods to avoid early initialization
 
@@ -85,9 +80,11 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(document_widget)
 
     def create_minimal_toolbar(self, parent_layout):
-        """Create an extremely minimal, professional toolbar."""
-        # Import qfluentwidgets here to avoid early widget creation
-        from qfluentwidgets import ToolButton, FluentIcon as FIF, CaptionLabel
+        """Create an extremely minimal, professional toolbar using standard Qt widgets."""
+        try:
+            from PyQt5.QtWidgets import QPushButton, QLabel
+        except ImportError:
+            from PyQt6.QtWidgets import QPushButton, QLabel
 
         # Create ultra-minimal toolbar - reduced height for more document space
         toolbar = QWidget()
@@ -103,13 +100,13 @@ class MainWindow(QMainWindow):
         toolbar_layout.setContentsMargins(15, 8, 15, 8)
         toolbar_layout.setSpacing(8)
 
-        # Essential buttons only - icon-only for space efficiency
-        home_btn = ToolButton(FIF.HOME)
+        # Essential buttons only - text-based for compatibility
+        home_btn = QPushButton("Home")
         home_btn.setToolTip("Home (Alt+H)")
         home_btn.clicked.connect(self.show_welcome)
         toolbar_layout.addWidget(home_btn)
 
-        open_btn = ToolButton(FIF.FOLDER)
+        open_btn = QPushButton("Open")
         open_btn.setToolTip("Open Document (Ctrl+O)")
         open_btn.clicked.connect(self.open_file)
         toolbar_layout.addWidget(open_btn)
@@ -121,20 +118,20 @@ class MainWindow(QMainWindow):
         toolbar_layout.addWidget(sep1)
 
         # Navigation - essential for document viewing
-        prev_btn = ToolButton(FIF.LEFT_ARROW)
+        prev_btn = QPushButton("◀")
         prev_btn.setToolTip("Previous Page (←)")
         prev_btn.clicked.connect(self.previous_page)
         toolbar_layout.addWidget(prev_btn)
 
-        next_btn = ToolButton(FIF.RIGHT_ARROW)
+        next_btn = QPushButton("▶")
         next_btn.setToolTip("Next Page (→)")
         next_btn.clicked.connect(self.next_page)
         toolbar_layout.addWidget(next_btn)
 
         # Page info - minimal and unobtrusive
-        self.page_info = CaptionLabel("No document")
+        self.page_info = QLabel("No document")
         self.page_info.setStyleSheet("""
-            CaptionLabel {
+            QLabel {
                 color: #666666;
                 font-size: 11px;
                 padding: 4px 8px;
@@ -146,44 +143,43 @@ class MainWindow(QMainWindow):
         toolbar_layout.addStretch()
 
         # Zoom controls - minimal
-        zoom_out_btn = ToolButton(FIF.ZOOM_OUT)
+        zoom_out_btn = QPushButton("−")
         zoom_out_btn.setToolTip("Zoom Out (Ctrl+-)")
         zoom_out_btn.clicked.connect(self.zoom_out)
         toolbar_layout.addWidget(zoom_out_btn)
 
-        zoom_in_btn = ToolButton(FIF.ZOOM_IN)
+        zoom_in_btn = QPushButton("+")
         zoom_in_btn.setToolTip("Zoom In (Ctrl++)")
         zoom_in_btn.clicked.connect(self.zoom_in)
         toolbar_layout.addWidget(zoom_in_btn)
 
-        fit_btn = ToolButton(FIF.FULL_SCREEN)
+        fit_btn = QPushButton("Fit")
         fit_btn.setToolTip("Fit to Window (Ctrl+0)")
         fit_btn.clicked.connect(self.fit_to_window)
         toolbar_layout.addWidget(fit_btn)
 
-        # Ultra-minimal button styling - no text, smaller size
+        # Ultra-minimal button styling
         button_style = """
-            ToolButton {
+            QPushButton {
                 background-color: transparent;
-                border: none;
+                border: 1px solid transparent;
                 border-radius: 3px;
-                padding: 6px;
+                padding: 6px 8px;
                 margin: 1px;
                 color: #555555;
-                min-width: 28px;
-                max-width: 28px;
+                font-size: 12px;
                 min-height: 28px;
-                max-height: 28px;
             }
-            ToolButton:hover {
+            QPushButton:hover {
                 background-color: #E0E0E0;
+                border: 1px solid #D0D0D0;
             }
-            ToolButton:pressed {
+            QPushButton:pressed {
                 background-color: #D0D0D0;
             }
         """
         
-        for button in toolbar.findChildren(ToolButton):
+        for button in toolbar.findChildren(QPushButton):
             button.setStyleSheet(button_style)
 
         parent_layout.addWidget(toolbar)
@@ -206,92 +202,48 @@ class MainWindow(QMainWindow):
 
         # Home shortcut
         home_action = QAction(self)
-        if QT_VERSION == 6:
-            home_action.setShortcut(QKeySequence(Qt.Modifier.ALT | Qt.Key.Key_H))
-        else:
-            home_action.setShortcut(QKeySequence(Qt.ALT | Qt.Key_H))
+        home_action.setShortcut(QKeySequence(Qt.ALT | Qt.Key_H))
         home_action.triggered.connect(self.show_welcome)
         self.addAction(home_action)
 
-        # Navigation shortcuts
-        if QT_VERSION == 6:
-            # Arrow keys
-            left_action = QAction(self)
-            left_action.setShortcut(Qt.Key.Key_Left)
-            left_action.triggered.connect(self.previous_page)
-            self.addAction(left_action)
+        # Arrow keys
+        left_action = QAction(self)
+        left_action.setShortcut(Qt.Key_Left)
+        left_action.triggered.connect(self.previous_page)
+        self.addAction(left_action)
 
-            right_action = QAction(self)
-            right_action.setShortcut(Qt.Key.Key_Right)
-            right_action.triggered.connect(self.next_page)
-            self.addAction(right_action)
+        right_action = QAction(self)
+        right_action.setShortcut(Qt.Key_Right)
+        right_action.triggered.connect(self.next_page)
+        self.addAction(right_action)
 
-            # Page Up/Down
-            page_up_action = QAction(self)
-            page_up_action.setShortcut(Qt.Key.Key_PageUp)
-            page_up_action.triggered.connect(self.previous_page)
-            self.addAction(page_up_action)
+        # Page Up/Down
+        page_up_action = QAction(self)
+        page_up_action.setShortcut(Qt.Key_PageUp)
+        page_up_action.triggered.connect(self.previous_page)
+        self.addAction(page_up_action)
 
-            page_down_action = QAction(self)
-            page_down_action.setShortcut(Qt.Key.Key_PageDown)
-            page_down_action.triggered.connect(self.next_page)
-            self.addAction(page_down_action)
+        page_down_action = QAction(self)
+        page_down_action.setShortcut(Qt.Key_PageDown)
+        page_down_action.triggered.connect(self.next_page)
+        self.addAction(page_down_action)
 
-            # Zoom shortcuts
-            zoom_in_action = QAction(self)
-            zoom_in_action.setShortcut(QKeySequence.ZoomIn)
-            zoom_in_action.triggered.connect(self.zoom_in)
-            self.addAction(zoom_in_action)
+        # Zoom shortcuts
+        zoom_in_action = QAction(self)
+        zoom_in_action.setShortcut(QKeySequence.ZoomIn)
+        zoom_in_action.triggered.connect(self.zoom_in)
+        self.addAction(zoom_in_action)
 
-            zoom_out_action = QAction(self)
-            zoom_out_action.setShortcut(QKeySequence.ZoomOut)
-            zoom_out_action.triggered.connect(self.zoom_out)
-            self.addAction(zoom_out_action)
+        zoom_out_action = QAction(self)
+        zoom_out_action.setShortcut(QKeySequence.ZoomOut)
+        zoom_out_action.triggered.connect(self.zoom_out)
+        self.addAction(zoom_out_action)
 
-            # Fit to window
-            fit_action = QAction(self)
-            fit_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_0))
-            fit_action.triggered.connect(self.fit_to_window)
-            self.addAction(fit_action)
-        else:
-            # Arrow keys
-            left_action = QAction(self)
-            left_action.setShortcut(Qt.Key_Left)
-            left_action.triggered.connect(self.previous_page)
-            self.addAction(left_action)
-
-            right_action = QAction(self)
-            right_action.setShortcut(Qt.Key_Right)
-            right_action.triggered.connect(self.next_page)
-            self.addAction(right_action)
-
-            # Page Up/Down
-            page_up_action = QAction(self)
-            page_up_action.setShortcut(Qt.Key_PageUp)
-            page_up_action.triggered.connect(self.previous_page)
-            self.addAction(page_up_action)
-
-            page_down_action = QAction(self)
-            page_down_action.setShortcut(Qt.Key_PageDown)
-            page_down_action.triggered.connect(self.next_page)
-            self.addAction(page_down_action)
-
-            # Zoom shortcuts
-            zoom_in_action = QAction(self)
-            zoom_in_action.setShortcut(QKeySequence.ZoomIn)
-            zoom_in_action.triggered.connect(self.zoom_in)
-            self.addAction(zoom_in_action)
-
-            zoom_out_action = QAction(self)
-            zoom_out_action.setShortcut(QKeySequence.ZoomOut)
-            zoom_out_action.triggered.connect(self.zoom_out)
-            self.addAction(zoom_out_action)
-
-            # Fit to window
-            fit_action = QAction(self)
-            fit_action.setShortcut(QKeySequence(Qt.CTRL | Qt.Key_0))
-            fit_action.triggered.connect(self.fit_to_window)
-            self.addAction(fit_action)
+        # Fit to window
+        fit_action = QAction(self)
+        fit_action.setShortcut(QKeySequence(Qt.CTRL | Qt.Key_0))
+        fit_action.triggered.connect(self.fit_to_window)
+        self.addAction(fit_action)
 
     def ensure_document_viewer(self):
         """Ensure document viewer is created when needed."""

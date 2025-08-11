@@ -2,16 +2,11 @@
 Document Viewer - Clean, minimal document display focused on content
 """
 
-try:
-    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel, QTextEdit
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QPixmap, QImage
-    QT_VERSION = 5
-except ImportError:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel, QTextEdit
-    from PyQt6.QtCore import Qt
-    from PyQt6.QtGui import QPixmap, QImage
-    QT_VERSION = 6
+# Force PyQt5 for compatibility
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel, QTextEdit
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QImage
+QT_VERSION = 5
 
 # Logger
 try:
@@ -136,10 +131,7 @@ class DocumentViewer(QWidget):
             if self.zoom_level != 1.0:
                 width = int(qimg.width() * self.zoom_level)
                 height = int(qimg.height() * self.zoom_level)
-                if QT_VERSION == 6:
-                    qimg = qimg.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                else:
-                    qimg = qimg.scaled(width, height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                qimg = qimg.scaled(width, height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
             # Create QPixmap from QImage
             pixmap = QPixmap.fromImage(qimg)

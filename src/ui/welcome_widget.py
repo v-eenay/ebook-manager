@@ -4,16 +4,11 @@ Welcome Widget - Clean, minimal welcome screen with recent books functionality
 
 from pathlib import Path
 
-try:
-    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem
-    from PyQt5.QtCore import Qt, pyqtSignal
-    from PyQt5.QtGui import QPixmap
-    QT_VERSION = 5
-except ImportError:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem
-    from PyQt6.QtCore import Qt, pyqtSignal
-    from PyQt6.QtGui import QPixmap
-    QT_VERSION = 6
+# Force PyQt5 for compatibility
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QPixmap
+QT_VERSION = 5
 
 # qfluentwidgets imports moved to methods to avoid early widget creation
 
@@ -43,24 +38,24 @@ class WelcomeWidget(QWidget):
             self.create_recent_books_panel(main_layout)
 
     def create_welcome_content(self, parent_layout):
-        """Create minimal, professional welcome content."""
-        from qfluentwidgets import CardWidget, PrimaryPushButton, TitleLabel, BodyLabel, CaptionLabel
+        """Create minimal, professional welcome content using standard Qt widgets."""
+        try:
+            from PyQt5.QtWidgets import QFrame, QPushButton, QLabel
+        except ImportError:
+            from PyQt6.QtWidgets import QFrame, QPushButton, QLabel
         
         welcome_container = QWidget()
         welcome_container.setMaximumWidth(450)
         layout = QVBoxLayout(welcome_container)
         
-        if QT_VERSION == 6:
-            layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignCenter)
         
         layout.setSpacing(25)
 
-        # Minimal welcome card with clean styling
-        card = CardWidget()
+        # Minimal welcome card with clean styling using QFrame
+        card = QFrame()
         card.setStyleSheet("""
-            CardWidget {
+            QFrame {
                 background-color: #FEFEFE;
                 border: 1px solid #F0F0F0;
                 border-radius: 8px;
@@ -71,25 +66,22 @@ class WelcomeWidget(QWidget):
         card_layout.setSpacing(20)
 
         # Minimal app title - no icon for cleaner look
-        title = TitleLabel("Modern EBook Reader")
+        title = QLabel("Modern EBook Reader")
         title.setStyleSheet("""
-            TitleLabel {
+            QLabel {
                 font-size: 24px;
                 font-weight: 300;
                 color: #2C2C2C;
                 margin-bottom: 5px;
             }
         """)
-        if QT_VERSION == 6:
-            title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(title)
         
         # Minimal description
-        desc = BodyLabel("Professional document reading for PDF, EPUB, and MOBI files")
+        desc = QLabel("Professional document reading for PDF, EPUB, and MOBI files")
         desc.setStyleSheet("""
-            BodyLabel {
+            QLabel {
                 font-size: 14px;
                 color: #666666;
                 font-weight: 400;
@@ -97,16 +89,13 @@ class WelcomeWidget(QWidget):
             }
         """)
         desc.setWordWrap(True)
-        if QT_VERSION == 6:
-            desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            desc.setAlignment(Qt.AlignCenter)
+        desc.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(desc)
         
         # Clean, minimal open button
-        open_button = PrimaryPushButton("Open Document")
+        open_button = QPushButton("Open Document")
         open_button.setStyleSheet("""
-            PrimaryPushButton {
+            QPushButton {
                 background-color: #0078D4;
                 border: none;
                 border-radius: 4px;
@@ -115,10 +104,10 @@ class WelcomeWidget(QWidget):
                 font-weight: 500;
                 color: white;
             }
-            PrimaryPushButton:hover {
+            QPushButton:hover {
                 background-color: #106EBE;
             }
-            PrimaryPushButton:pressed {
+            QPushButton:pressed {
                 background-color: #005A9E;
             }
         """)
@@ -128,36 +117,36 @@ class WelcomeWidget(QWidget):
         card_layout.addWidget(open_button)
         
         # Minimal keyboard shortcut hint
-        shortcut_label = CaptionLabel("Ctrl+O")
+        shortcut_label = QLabel("Ctrl+O")
         shortcut_label.setStyleSheet("""
-            CaptionLabel {
+            QLabel {
                 font-size: 11px;
                 color: #999999;
                 font-weight: 400;
             }
         """)
-        if QT_VERSION == 6:
-            shortcut_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        else:
-            shortcut_label.setAlignment(Qt.AlignCenter)
+        shortcut_label.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(shortcut_label)
 
         layout.addWidget(card)
         parent_layout.addWidget(welcome_container)
 
     def create_recent_books_panel(self, parent_layout):
-        """Create a minimal, professional recent books panel."""
-        from qfluentwidgets import CardWidget, PrimaryPushButton, SubtitleLabel
+        """Create a minimal, professional recent books panel using standard Qt widgets."""
+        try:
+            from PyQt5.QtWidgets import QFrame, QPushButton, QLabel
+        except ImportError:
+            from PyQt6.QtWidgets import QFrame, QPushButton, QLabel
         
         recent_container = QWidget()
         recent_container.setMaximumWidth(350)
         layout = QVBoxLayout(recent_container)
         layout.setSpacing(15)
 
-        # Minimal recent books card
-        recent_card = CardWidget()
+        # Minimal recent books card using QFrame
+        recent_card = QFrame()
         recent_card.setStyleSheet("""
-            CardWidget {
+            QFrame {
                 background-color: #FEFEFE;
                 border: 1px solid #F0F0F0;
                 border-radius: 8px;
@@ -168,9 +157,9 @@ class WelcomeWidget(QWidget):
         recent_layout.setSpacing(12)
 
         # Minimal title
-        recent_title = SubtitleLabel("Recent")
+        recent_title = QLabel("Recent")
         recent_title.setStyleSheet("""
-            SubtitleLabel {
+            QLabel {
                 font-size: 16px;
                 font-weight: 500;
                 color: #2C2C2C;
@@ -221,9 +210,9 @@ class WelcomeWidget(QWidget):
         recent_layout.addWidget(self.recent_list)
 
         # Minimal clear button
-        clear_button = PrimaryPushButton("Clear")
+        clear_button = QPushButton("Clear")
         clear_button.setStyleSheet("""
-            PrimaryPushButton {
+            QPushButton {
                 background-color: #F5F5F5;
                 border: 1px solid #E0E0E0;
                 border-radius: 3px;
@@ -231,7 +220,7 @@ class WelcomeWidget(QWidget):
                 font-size: 12px;
                 color: #666666;
             }
-            PrimaryPushButton:hover {
+            QPushButton:hover {
                 background-color: #EEEEEE;
                 border-color: #D0D0D0;
             }
