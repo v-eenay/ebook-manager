@@ -20,9 +20,28 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.current_document = None
         self.document_manager = None
+        self.search_engine = None
+        self.search_indexer = None
+        self.init_search()
         self.init_ui()
         self.setup_shortcuts()
         self.setup_drag_drop()
+
+    def init_search(self):
+        """Initialize search functionality"""
+        try:
+            from search.search_engine import SearchEngine
+            from search.indexer import DocumentIndexer
+            
+            self.search_engine = SearchEngine()
+            self.search_indexer = DocumentIndexer(self.search_engine)
+        except Exception as e:
+            # Search functionality is optional
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.warning(f"Search functionality not available: {e}")
+            self.search_engine = None
+            self.search_indexer = None
 
     def init_ui(self):
         """Initialize the clean, minimal user interface."""
@@ -51,6 +70,9 @@ class MainWindow(QMainWindow):
 
         # Create document viewer page
         self.create_document_page()
+        
+        # Create search page
+        self.create_search_page()
 
         # Start with welcome page
         self.stacked_widget.setCurrentIndex(0)
@@ -83,6 +105,23 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.document_viewer_container)
 
         self.stacked_widget.addWidget(document_widget)
+
+    def create_search_page(self):
+        """Create the search page."""
+        if not self.search_engine:
+            return  # Search not available
+        
+        try:
+            from search.search_ui import SearchWidget
+            
+            self.search_widget = SearchWidget(self.search_engine)
+            self.search_widget.document_requested.connect(self.open_search_result)
+            
+            self.stacked_widget.addWidget(self.search_widget)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to create search page: {e}")
 
     def create_minimal_toolbar(self, parent_layout):
         """Create an extremely minimal, professional toolbar using standard Qt widgets."""
@@ -434,13 +473,8 @@ class MainWindow(QMainWindow):
 
     def toggle_search(self):
         """Toggle search functionality."""
-        if not self.document_viewer or not self.document_viewer.current_document:
-            return
-            
-        if self.search_input.isVisible():
-            self.close_search()
-        else:
-            self.show_search()
+        # Show the advanced search page
+        self.show_search()
 
     def show_search(self):
         """Show search interface."""
@@ -658,6 +692,72 @@ class MainWindow(QMainWindow):
     def show_welcome(self):
         """Show the welcome page."""
         self.stacked_widget.setCurrentIndex(0)
+    
+    def show_search(self):
+        """Show the search page."""
+        if self.search_engine and hasattr(self, 'search_widget'):
+            # Find search widget index
+            for i in range(self.stacked_widget.count()):
+                if self.stacked_widget.widget(i) == self.search_widget:
+                    self.stacked_widget.setCurrentIndex(i)
+                    break
+    
+    def open_search_result(self, document_path: str, page_number: int):
+        """Open a document from search results at specific page."""
+        try:
+            # Load the document
+            self.load_document(document_path)
+            
+            # Navigate to the specific page
+            if self.document_viewer and hasattr(self.document_viewer, 'go_to_page'):
+                self.document_viewer.go_to_page(page_number)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to open search result: {e}")
+    
+    def index_document_async(self, file_path: str):
+        """Index document for search in background."""
+        if not self.search_indexer:
+            return
+        
+        try:
+            from PyQt5.QtCore import QThread, pyqtSignal
+            
+            class IndexWorker(QThread):
+                finished = pyqtSignal(bool, str)
+                
+                def __init__(self, indexer, file_path):
+                    super().__init__()
+                    self.indexer = indexer
+                    self.file_path = file_path
+                
+                def run(self):
+                    try:
+                        success = self.indexer.index_document(self.file_path)
+                        self.finished.emit(success, self.file_path)
+                    except Exception as e:
+                        self.finished.emit(False, str(e))
+            
+            # Start indexing in background
+            self.index_worker = IndexWorker(self.search_indexer, file_path)
+            self.index_worker.finished.connect(self.on_indexing_finished)
+            self.index_worker.start()
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to start document indexing: {e}")
+    
+    def on_indexing_finished(self, success: bool, result: str):
+        """Handle indexing completion."""
+        if success:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.info(f"Document indexed for search: {result}")
+        # Cleanup worker
+        if hasattr(self, 'index_worker'):
+            self.index_worker.deleteLater()
 
     def show_document(self):
         """Show the document viewer page."""
@@ -695,6 +795,9 @@ class MainWindow(QMainWindow):
                 # Update welcome widget recent books
                 if hasattr(self, 'welcome_widget'):
                     self.welcome_widget.add_recent_book(file_path)
+                
+                # Index document for search (in background)
+                self.index_document_async(file_path)
                 
                 # Ensure document viewer exists
                 self.ensure_document_viewer()

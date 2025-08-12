@@ -191,3 +191,74 @@ NameError: name 'QLabel' is not defined
 2025-08-11 21:59:33 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf (1 pages)
 2025-08-11 21:59:33 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
 2025-08-11 21:59:33 | INFO     | ebook_reader | main_window.load_document:733 | Document loaded successfully: UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 23:18:56 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 23:18:56 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 23:18:56 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-11 23:18:56 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 23:18:56 | INFO     | ebook_reader | main_window.ensure_document_viewer:647 | Creating DocumentViewer...
+2025-08-11 23:18:56 | INFO     | ebook_reader | main_window.ensure_document_viewer:654 | DocumentViewer created successfully
+2025-08-11 23:18:57 | INFO     | ebook_reader | main_window.load_document:733 | Document loaded successfully: test_document.pdf
+2025-08-11 23:22:59 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: test_document.pdf
+2025-08-11 23:22:59 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: test_document.pdf
+2025-08-11 23:22:59 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: test_document.pdf (3 pages)
+2025-08-11 23:22:59 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 23:22:59 | INFO     | ebook_reader | main_window.ensure_document_viewer:647 | Creating DocumentViewer...
+2025-08-11 23:22:59 | INFO     | ebook_reader | main_window.ensure_document_viewer:654 | DocumentViewer created successfully
+2025-08-11 23:22:59 | INFO     | ebook_reader | main_window.load_document:733 | Document loaded successfully: test_document.pdf
+2025-08-11 23:23:07 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 23:23:07 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf
+2025-08-11 23:23:07 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\OneDrive\Desktop\ebook-manager\test_document.pdf (3 pages)
+2025-08-11 23:23:07 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 23:23:07 | INFO     | ebook_reader | main_window.ensure_document_viewer:647 | Creating DocumentViewer...
+2025-08-11 23:23:07 | INFO     | ebook_reader | main_window.ensure_document_viewer:654 | DocumentViewer created successfully
+2025-08-11 23:23:45 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: test_document.pdf
+2025-08-11 23:23:45 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: test_document.pdf
+2025-08-11 23:23:45 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: test_document.pdf (3 pages)
+2025-08-11 23:23:45 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 23:23:45 | INFO     | ebook_reader | main_window.ensure_document_viewer:647 | Creating DocumentViewer...
+2025-08-11 23:23:45 | INFO     | ebook_reader | main_window.ensure_document_viewer:654 | DocumentViewer created successfully
+2025-08-11 23:23:45 | INFO     | ebook_reader | main_window.load_document:733 | Document loaded successfully: test_document.pdf
+2025-08-11 23:31:18 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: test_document.pdf
+2025-08-11 23:31:18 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: test_document.pdf (3 pages)
+2025-08-11 23:31:18 | ERROR    | ebook_reader | indexer._extract_pdf_content:112 | PDF content extraction failed: Page index 3 out of range
+2025-08-11 23:31:18 | WARNING  | ebook_reader | indexer.index_document:38 | No content extracted from: test_document.pdf
+2025-08-11 23:31:18 | INFO     | ebook_reader | search_engine.index_document:93 | Indexed document: ui_test.pdf (3 pages)
+2025-08-11 23:32:11 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: test_document.pdf
+2025-08-11 23:32:11 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: test_document.pdf (3 pages)
+2025-08-11 23:32:11 | INFO     | ebook_reader | search_engine.index_document:93 | Indexed document: test_document.pdf (3 pages)
+2025-08-11 23:32:11 | INFO     | ebook_reader | indexer.index_document:43 | Successfully indexed: test_document.pdf
+2025-08-11 23:32:11 | INFO     | ebook_reader | search_engine.index_document:93 | Indexed document: ui_test.pdf (3 pages)
+2025-08-11 23:36:01 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: test_document.pdf
+2025-08-11 23:36:01 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: test_document.pdf
+2025-08-11 23:36:01 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: test_document.pdf (3 pages)
+2025-08-11 23:36:01 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 23:36:01 | INFO     | ebook_reader | main_window.ensure_document_viewer:681 | Creating DocumentViewer...
+2025-08-11 23:36:01 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: test_document.pdf
+2025-08-11 23:36:01 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: test_document.pdf (3 pages)
+2025-08-11 23:36:01 | INFO     | ebook_reader | main_window.ensure_document_viewer:688 | DocumentViewer created successfully
+2025-08-11 23:36:02 | INFO     | ebook_reader | search_engine.index_document:93 | Indexed document: test_document.pdf (3 pages)
+2025-08-11 23:36:02 | INFO     | ebook_reader | indexer.index_document:43 | Successfully indexed: test_document.pdf
+2025-08-11 23:36:02 | INFO     | ebook_reader | main_window.load_document:836 | Document loaded successfully: test_document.pdf
+2025-08-11 23:36:02 | INFO     | ebook_reader | main_window.on_indexing_finished:757 | Document indexed for search: test_document.pdf
+2025-08-11 23:36:04 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: test.pdf
+2025-08-11 23:36:04 | ERROR    | ebook_reader | document_manager.load_document:64 | File not found: test.pdf
+2025-08-11 23:36:04 | ERROR    | ebook_reader | main_window.load_document:844 | Error loading document: File not found: test.pdf
+Traceback (most recent call last):
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\src\ui\main_window.py", line 789, in load_document
+    self.current_document = self.document_manager.load_document(file_path)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\koira\OneDrive\Desktop\ebook-manager\src\readers\document_manager.py", line 65, in load_document
+    raise FileNotFoundError(f"File not found: {file_path}")
+FileNotFoundError: File not found: test.pdf
+2025-08-11 23:41:49 | INFO     | ebook_reader | document_manager.load_document:61 | Loading document: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 23:41:49 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 23:41:49 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:\Users\koira\Downloads\UPC-03 Class Time Schedule - (Week 1-3).pdf (1 pages)
+2025-08-11 23:41:49 | INFO     | ebook_reader | document_manager.load_document:79 | Document loaded successfully with PDFReader
+2025-08-11 23:41:49 | INFO     | ebook_reader | main_window.ensure_document_viewer:681 | Creating DocumentViewer...
+2025-08-11 23:41:49 | INFO     | ebook_reader | pdf_reader.load:39 | Opening PDF: C:/Users/koira/Downloads/UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 23:41:49 | INFO     | ebook_reader | pdf_reader.load:56 | PDF loaded: C:/Users/koira/Downloads/UPC-03 Class Time Schedule - (Week 1-3).pdf (1 pages)
+2025-08-11 23:41:49 | INFO     | ebook_reader | main_window.ensure_document_viewer:688 | DocumentViewer created successfully
+2025-08-11 23:41:49 | INFO     | ebook_reader | main_window.load_document:836 | Document loaded successfully: UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 23:41:49 | INFO     | ebook_reader | search_engine.index_document:93 | Indexed document: C:/Users/koira/Downloads/UPC-03 Class Time Schedule - (Week 1-3).pdf (1 pages)
+2025-08-11 23:41:49 | INFO     | ebook_reader | indexer.index_document:43 | Successfully indexed: C:/Users/koira/Downloads/UPC-03 Class Time Schedule - (Week 1-3).pdf
+2025-08-11 23:41:49 | INFO     | ebook_reader | main_window.on_indexing_finished:757 | Document indexed for search: C:/Users/koira/Downloads/UPC-03 Class Time Schedule - (Week 1-3).pdf
