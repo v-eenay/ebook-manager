@@ -22,7 +22,11 @@ class MainWindow(QMainWindow):
         self.document_manager = None
         self.search_engine = None
         self.search_indexer = None
+        self.annotation_manager = None
+        self.bookmark_sidebar = None
+        self.annotation_toolbar = None
         self.init_search()
+        self.init_annotations()
         self.init_ui()
         self.setup_shortcuts()
         self.setup_drag_drop()
@@ -42,6 +46,23 @@ class MainWindow(QMainWindow):
             logger.warning(f"Search functionality not available: {e}")
             self.search_engine = None
             self.search_indexer = None
+
+    def init_annotations(self):
+        """Initialize annotation functionality"""
+        try:
+            from annotations.annotation_manager import AnnotationManager
+            
+            self.annotation_manager = AnnotationManager()
+            
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.info("Annotation system initialized")
+        except Exception as e:
+            # Annotation functionality is optional
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.warning(f"Annotation functionality not available: {e}")
+            self.annotation_manager = None
 
     def init_ui(self):
         """Initialize the clean, minimal user interface."""
@@ -96,13 +117,28 @@ class MainWindow(QMainWindow):
 
         # Create minimal toolbar
         self.create_minimal_toolbar(layout)
+        
+        # Create annotation toolbar if available
+        self.create_annotation_toolbar(layout)
+
+        # Create main content area with sidebar support
+        content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+        
+        # Create bookmark sidebar (initially hidden)
+        self.create_bookmark_sidebar(content_layout)
 
         # Create document viewer (lazy loading)
         self.document_viewer = None
         self.document_viewer_container = QWidget()
         self.document_viewer_layout = QVBoxLayout(self.document_viewer_container)
         self.document_viewer_layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.document_viewer_container)
+        content_layout.addWidget(self.document_viewer_container)
+        
+        content_widget = QWidget()
+        content_widget.setLayout(content_layout)
+        layout.addWidget(content_widget)
 
         self.stacked_widget.addWidget(document_widget)
 
@@ -331,6 +367,66 @@ class MainWindow(QMainWindow):
             button.setStyleSheet(button_style)
 
         parent_layout.addWidget(toolbar)
+
+    def create_annotation_toolbar(self, parent_layout):
+        """Create annotation toolbar if annotation system is available"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from annotations.ui.annotation_toolbar import AnnotationToolbar
+            
+            self.annotation_toolbar = AnnotationToolbar()
+            self.annotation_toolbar.setFixedHeight(40)
+            
+            # Connect signals
+            self.annotation_toolbar.add_bookmark_requested.connect(self.toggle_bookmark)
+            self.annotation_toolbar.toggle_bookmarks_panel.connect(self.toggle_bookmark_sidebar)
+            self.annotation_toolbar.highlight_mode_toggled.connect(self.set_highlight_mode)
+            self.annotation_toolbar.highlight_color_changed.connect(self.set_highlight_color)
+            self.annotation_toolbar.add_note_requested.connect(self.add_note)
+            
+            # Initially disable until document is loaded
+            self.annotation_toolbar.enable_actions(False)
+            
+            parent_layout.addWidget(self.annotation_toolbar)
+            
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.info("Annotation toolbar created")
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to create annotation toolbar: {e}")
+
+    def create_bookmark_sidebar(self, parent_layout):
+        """Create bookmark sidebar if annotation system is available"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from annotations.ui.bookmark_ui import BookmarkSidebar
+            
+            self.bookmark_sidebar = BookmarkSidebar(self.annotation_manager.bookmark_manager)
+            self.bookmark_sidebar.setFixedWidth(250)
+            self.bookmark_sidebar.setVisible(False)  # Initially hidden
+            
+            # Connect signals
+            self.bookmark_sidebar.bookmark_selected.connect(self.navigate_to_bookmark)
+            self.bookmark_sidebar.bookmark_edited.connect(self.edit_bookmark)
+            self.bookmark_sidebar.bookmark_deleted.connect(self.delete_bookmark)
+            
+            parent_layout.addWidget(self.bookmark_sidebar)
+            
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.info("Bookmark sidebar created")
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to create bookmark sidebar: {e}")
 
     def update_page_info(self, current_page=None, total_pages=None):
         """Update the enhanced page info display."""
@@ -693,6 +789,239 @@ class MainWindow(QMainWindow):
         """Show the welcome page."""
         self.stacked_widget.setCurrentIndex(0)
     
+    # Bookmark-related methods
+    def toggle_bookmark(self):
+        """Toggle bookmark on current page"""
+        if not self.annotation_manager or not self.current_document:
+            return
+        
+        try:
+            current_page = self.get_current_page()
+            if current_page is None:
+                return
+            
+            # Check if bookmark exists
+            existing_bookmark = self.annotation_manager.bookmark_manager.get_bookmark_for_page(
+                self.current_document.file_path, current_page
+            )
+            
+            if existing_bookmark:
+                # Remove existing bookmark
+                success = self.annotation_manager.delete_bookmark(existing_bookmark.id)
+                if success:
+                    self.update_bookmark_indicators()
+                    self.update_annotation_toolbar()
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Removed bookmark from page {current_page}")
+            else:
+                # Add new bookmark
+                self.show_add_bookmark_dialog(current_page)
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to toggle bookmark: {e}")
+    
+    def show_add_bookmark_dialog(self, page_number: int):
+        """Show dialog to add a new bookmark"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from annotations.ui.bookmark_ui import BookmarkDialog
+            
+            categories = self.annotation_manager.get_categories()
+            dialog = BookmarkDialog(categories=categories, parent=self)
+            
+            if dialog.exec_() == dialog.Accepted:
+                data = dialog.get_bookmark_data()
+                
+                bookmark = self.annotation_manager.create_bookmark(
+                    document_path=self.current_document.file_path,
+                    page_number=page_number,
+                    title=data['title'],
+                    description=data['description'],
+                    category=data['category']
+                )
+                
+                if bookmark:
+                    self.update_bookmark_indicators()
+                    self.update_annotation_toolbar()
+                    if self.bookmark_sidebar:
+                        self.bookmark_sidebar.refresh()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Added bookmark: {bookmark.title}")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to show add bookmark dialog: {e}")
+    
+    def edit_bookmark(self, bookmark_id: str):
+        """Edit an existing bookmark"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            bookmark = self.annotation_manager.get_annotation_by_id(bookmark_id)
+            if not bookmark:
+                return
+            
+            from annotations.ui.bookmark_ui import BookmarkDialog
+            
+            categories = self.annotation_manager.get_categories()
+            dialog = BookmarkDialog(bookmark=bookmark, categories=categories, parent=self)
+            
+            if dialog.exec_() == dialog.Accepted:
+                success = self.annotation_manager.update_bookmark(bookmark)
+                if success:
+                    self.update_bookmark_indicators()
+                    if self.bookmark_sidebar:
+                        self.bookmark_sidebar.refresh()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Updated bookmark: {bookmark.title}")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to edit bookmark: {e}")
+    
+    def delete_bookmark(self, bookmark_id: str):
+        """Delete a bookmark with confirmation"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from PyQt5.QtWidgets import QMessageBox
+            
+            bookmark = self.annotation_manager.get_annotation_by_id(bookmark_id)
+            if not bookmark:
+                return
+            
+            reply = QMessageBox.question(
+                self, "Delete Bookmark",
+                f"Are you sure you want to delete the bookmark '{bookmark.title}'?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            
+            if reply == QMessageBox.Yes:
+                success = self.annotation_manager.delete_bookmark(bookmark_id)
+                if success:
+                    self.update_bookmark_indicators()
+                    self.update_annotation_toolbar()
+                    if self.bookmark_sidebar:
+                        self.bookmark_sidebar.refresh()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Deleted bookmark: {bookmark.title}")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to delete bookmark: {e}")
+    
+    def navigate_to_bookmark(self, document_path: str, page_number: int):
+        """Navigate to a bookmarked page"""
+        try:
+            if document_path != self.current_document.file_path:
+                # Load different document
+                self.load_document(document_path)
+            
+            # Navigate to page
+            if self.document_viewer and hasattr(self.document_viewer, 'go_to_page'):
+                self.document_viewer.go_to_page(page_number)
+                self.update_page_info_display()
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to navigate to bookmark: {e}")
+    
+    def toggle_bookmark_sidebar(self):
+        """Toggle bookmark sidebar visibility"""
+        if self.bookmark_sidebar:
+            visible = not self.bookmark_sidebar.isVisible()
+            self.bookmark_sidebar.setVisible(visible)
+            
+            if self.annotation_toolbar:
+                self.annotation_toolbar.set_panel_visibility("bookmarks", visible)
+    
+    def update_bookmark_indicators(self):
+        """Update bookmark indicators in document viewer"""
+        # This will be implemented when we integrate with document viewer rendering
+        pass
+    
+    def update_annotation_toolbar(self):
+        """Update annotation toolbar state"""
+        if not self.annotation_toolbar or not self.current_document:
+            return
+        
+        try:
+            current_page = self.get_current_page()
+            if current_page is not None:
+                bookmark_exists = self.annotation_manager.bookmark_manager.bookmark_exists(
+                    self.current_document.file_path, current_page
+                )
+                self.annotation_toolbar.set_bookmark_exists(bookmark_exists)
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to update annotation toolbar: {e}")
+    
+    def get_current_page(self) -> int:
+        """Get current page number"""
+        if self.document_viewer and hasattr(self.document_viewer, 'get_current_page'):
+            return self.document_viewer.get_current_page()
+        return 1
+    
+    # Placeholder methods for highlight and note functionality
+    def set_highlight_mode(self, enabled: bool):
+        """Set highlight mode (placeholder for future implementation)"""
+        pass
+    
+    def set_highlight_color(self, color: str):
+        """Set highlight color (placeholder for future implementation)"""
+        pass
+    
+    def add_note(self):
+        """Add note (placeholder for future implementation)"""
+        pass
+    
+    def init_document_annotations(self, file_path: str):
+        """Initialize annotations for the loaded document"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            # Enable annotation toolbar
+            if self.annotation_toolbar:
+                self.annotation_toolbar.enable_actions(True)
+                self.update_annotation_toolbar()
+            
+            # Load bookmarks in sidebar
+            if self.bookmark_sidebar:
+                self.bookmark_sidebar.set_document(file_path)
+            
+            # Update bookmark indicators
+            self.update_bookmark_indicators()
+            
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.info(f"Initialized annotations for document: {file_path}")
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to initialize document annotations: {e}")
+    
     def show_search(self):
         """Show the search page."""
         if self.search_engine and hasattr(self, 'search_widget'):
@@ -815,6 +1144,9 @@ class MainWindow(QMainWindow):
                 
                 # Initialize zoom info
                 self.update_zoom_info(self.document_viewer.zoom_level)
+                
+                # Initialize annotations for this document
+                self.init_document_annotations(file_path)
                 
                 # Set initial view mode from settings
                 try:
