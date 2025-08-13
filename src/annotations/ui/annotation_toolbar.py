@@ -122,6 +122,7 @@ class AnnotationToolbar(QToolBar):
     
     # General signals
     toggle_annotations_panel = pyqtSignal()
+    toggle_notes_panel = pyqtSignal()
     
     def __init__(self, parent=None):
         super().__init__("Annotations", parent)
@@ -162,11 +163,17 @@ class AnnotationToolbar(QToolBar):
         self.bookmarks_panel_action.triggered.connect(self.toggle_bookmarks_panel.emit)
         self.addAction(self.bookmarks_panel_action)
         
-        self.annotations_panel_action = QAction("Annotations Panel", self)
-        self.annotations_panel_action.setToolTip("Show/hide annotations panel")
+        self.annotations_panel_action = QAction("Highlights Panel", self)
+        self.annotations_panel_action.setToolTip("Show/hide highlights panel")
         self.annotations_panel_action.setCheckable(True)
         self.annotations_panel_action.triggered.connect(self.toggle_annotations_panel.emit)
         self.addAction(self.annotations_panel_action)
+        
+        self.notes_panel_action = QAction("Notes Panel", self)
+        self.notes_panel_action.setToolTip("Show/hide notes panel")
+        self.notes_panel_action.setCheckable(True)
+        self.notes_panel_action.triggered.connect(self.toggle_notes_panel.emit)
+        self.addAction(self.notes_panel_action)
     
     def init_widgets(self):
         """Initialize toolbar widgets"""
@@ -210,6 +217,8 @@ class AnnotationToolbar(QToolBar):
             self.bookmarks_panel_action.setChecked(visible)
         elif panel_name == "annotations":
             self.annotations_panel_action.setChecked(visible)
+        elif panel_name == "notes":
+            self.notes_panel_action.setChecked(visible)
     
     def get_selected_highlight_color(self) -> str:
         """Get the currently selected highlight color"""

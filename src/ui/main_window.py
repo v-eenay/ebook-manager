@@ -11,6 +11,12 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QKeySequence
 QT_VERSION = 5
 
+# Import Point for type hints (will be imported when needed)
+try:
+    from annotations.models import Point
+except ImportError:
+    Point = None
+
 # Logger will be imported inside methods to avoid early initialization
 
 class MainWindow(QMainWindow):
@@ -385,6 +391,8 @@ class MainWindow(QMainWindow):
             self.annotation_toolbar.highlight_mode_toggled.connect(self.set_highlight_mode)
             self.annotation_toolbar.highlight_color_changed.connect(self.set_highlight_color)
             self.annotation_toolbar.add_note_requested.connect(self.add_note)
+            self.annotation_toolbar.toggle_annotations_panel.connect(self.toggle_highlight_panel)
+            self.annotation_toolbar.toggle_notes_panel.connect(self.toggle_note_panel)
             
             # Initially disable until document is loaded
             self.annotation_toolbar.enable_actions(False)
@@ -464,6 +472,7 @@ class MainWindow(QMainWindow):
                     if 1 <= page_num <= total_pages:
                         self.document_viewer.jump_to_page(page_num - 1)  # Convert to 0-based
                         self.update_page_info_display()
+                        self.update_note_display()
         except ValueError:
             pass  # Invalid input, ignore
         finally:
@@ -780,6 +789,10 @@ class MainWindow(QMainWindow):
             from ui.document_viewer import DocumentViewer
             self.document_viewer = DocumentViewer()
             self.document_viewer_layout.addWidget(self.document_viewer)
+            
+            # Initialize note renderer overlay
+            self.init_note_renderer()
+            
             try:
                 logger.info("DocumentViewer created successfully")
             except:
@@ -953,6 +966,18 @@ class MainWindow(QMainWindow):
             if self.annotation_toolbar:
                 self.annotation_toolbar.set_panel_visibility("bookmarks", visible)
     
+    def toggle_highlight_panel(self):
+        """Toggle highlight panel visibility"""
+        if not hasattr(self, 'highlight_panel'):
+            self.create_highlight_panel()
+        
+        if self.highlight_panel:
+            visible = not self.highlight_panel.isVisible()
+            self.highlight_panel.setVisible(visible)
+            
+            if self.annotation_toolbar:
+                self.annotation_toolbar.set_panel_visibility("annotations", visible)
+    
     def update_bookmark_indicators(self):
         """Update bookmark indicators in document viewer"""
         # This will be implemented when we integrate with document viewer rendering
@@ -982,18 +1007,512 @@ class MainWindow(QMainWindow):
             return self.document_viewer.get_current_page()
         return 1
     
-    # Placeholder methods for highlight and note functionality
+    # Highlight and note functionality
     def set_highlight_mode(self, enabled: bool):
-        """Set highlight mode (placeholder for future implementation)"""
-        pass
+        """Set highlight mode for text selection"""
+        if not hasattr(self, 'highlight_mode_manager'):
+            self.init_highlight_mode_manager()
+        
+        if self.highlight_mode_manager:
+            self.highlight_mode_manager.enable_highlight_mode(enabled)
+            
+            # Update cursor and UI feedback
+            if enabled:
+                self.statusBar().showMessage("Highlight mode enabled - Select text to highlight", 3000)
+            else:
+                self.statusBar().showMessage("Highlight mode disabled", 2000)
     
     def set_highlight_color(self, color: str):
-        """Set highlight color (placeholder for future implementation)"""
-        pass
+        """Set highlight color for new highlights"""
+        if not hasattr(self, 'highlight_mode_manager'):
+            self.init_highlight_mode_manager()
+        
+        if self.highlight_mode_manager:
+            self.highlight_mode_manager.set_highlight_color(color)
     
     def add_note(self):
-        """Add note (placeholder for future implementation)"""
-        pass
+        """Add note at current cursor position or enable note mode"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            # Enable note placement mode
+            if not hasattr(self, 'note_placement_manager'):
+                self.init_note_placement_manager()
+            
+            if self.note_placement_manager:
+                self.note_placement_manager.enable_note_mode(True)
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to add note: {e}")
+    
+    def init_note_placement_manager(self):
+        """Initialize note placement manager"""
+        try:
+            from annotations.ui.note_positioning import NotePlacementManager
+            self.note_placement_manager = NotePlacementManager(self)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to initialize note placement manager: {e}")
+            self.note_placement_manager = None
+    
+    def init_note_renderer(self):
+        """Initialize note renderer overlay"""
+        if not self.annotation_manager or not self.document_viewer:
+            return
+        
+        try:
+            from annotations.ui.note_positioning import NoteRenderer
+            
+            self.note_renderer = NoteRenderer(self.document_viewer)
+            self.note_renderer.note_clicked.connect(self.on_note_clicked)
+            self.note_renderer.note_hovered.connect(self.on_note_hovered)
+            
+            # Position the renderer as an overlay
+            self.note_renderer.resize(self.document_viewer.size())
+            self.note_renderer.show()
+            self.note_renderer.raise_()
+            
+            # Connect to document viewer resize events
+            if hasattr(self.document_viewer, 'resizeEvent'):
+                original_resize = self.document_viewer.resizeEvent
+                def new_resize_event(event):
+                    original_resize(event)
+                    if hasattr(self, 'note_renderer') and self.note_renderer:
+                        self.note_renderer.resize(event.size())
+                self.document_viewer.resizeEvent = new_resize_event
+            
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.info("Note renderer initialized")
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to initialize note renderer: {e}")
+            self.note_renderer = None
+    
+    def on_note_clicked(self, note_id: str):
+        """Handle note click events"""
+        try:
+            from annotations.ui.note_ui import NoteTooltip
+            
+            note = self.annotation_manager.get_annotation_by_id(note_id)
+            if note:
+                # Show note tooltip or dialog
+                tooltip = NoteTooltip(note, self)
+                
+                # Position tooltip near cursor
+                cursor_pos = self.mapFromGlobal(self.cursor().pos())
+                tooltip.move(cursor_pos.x() + 10, cursor_pos.y() + 10)
+                tooltip.show()
+                
+                # Auto-hide after 5 seconds
+                from PyQt5.QtCore import QTimer
+                QTimer.singleShot(5000, tooltip.hide)
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to handle note click: {e}")
+    
+    def on_note_hovered(self, note_id: str):
+        """Handle note hover events"""
+        try:
+            note = self.annotation_manager.get_annotation_by_id(note_id)
+            if note:
+                # Update status bar with note preview
+                preview = note.plain_text[:100]
+                if len(note.plain_text) > 100:
+                    preview += "..."
+                self.statusBar().showMessage(f"Note: {preview}", 3000)
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to handle note hover: {e}")
+    
+    def show_add_note_dialog(self, position: Point):
+        """Show dialog to add a new note"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from annotations.ui.note_ui import NoteDialog
+            
+            categories = self.annotation_manager.get_categories()
+            dialog = NoteDialog(categories=categories, position=position, parent=self)
+            
+            if dialog.exec_() == dialog.Accepted:
+                data = dialog.get_note_data()
+                
+                current_page = self.get_current_page()
+                if current_page is None:
+                    return
+                
+                note = self.annotation_manager.create_note(
+                    document_path=self.current_document.file_path,
+                    page_number=current_page,
+                    position=position,
+                    content=data['content'],
+                    plain_text=data['plain_text'],
+                    category=data['category']
+                )
+                
+                if note:
+                    self.update_note_display()
+                    if hasattr(self, 'note_panel') and self.note_panel:
+                        self.note_panel.refresh()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Added note: {note.plain_text[:50]}...")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to show add note dialog: {e}")
+    
+    def edit_note(self, note_id: str):
+        """Edit an existing note"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            note = self.annotation_manager.get_annotation_by_id(note_id)
+            if not note:
+                return
+            
+            from annotations.ui.note_ui import NoteDialog
+            
+            categories = self.annotation_manager.get_categories()
+            dialog = NoteDialog(note=note, categories=categories, parent=self)
+            
+            if dialog.exec_() == dialog.Accepted:
+                success = self.annotation_manager.update_note(note)
+                if success:
+                    self.update_note_display()
+                    if hasattr(self, 'note_panel') and self.note_panel:
+                        self.note_panel.refresh()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Updated note: {note.id}")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to edit note: {e}")
+    
+    def delete_note(self, note_id: str):
+        """Delete a note with confirmation"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from PyQt5.QtWidgets import QMessageBox
+            
+            note = self.annotation_manager.get_annotation_by_id(note_id)
+            if not note:
+                return
+            
+            reply = QMessageBox.question(
+                self, "Delete Note",
+                f"Are you sure you want to delete this note?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            
+            if reply == QMessageBox.Yes:
+                success = self.annotation_manager.delete_note(note_id)
+                if success:
+                    self.update_note_display()
+                    if hasattr(self, 'note_panel') and self.note_panel:
+                        self.note_panel.refresh()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Deleted note: {note_id}")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to delete note: {e}")
+    
+    def reply_to_note(self, parent_note_id: str):
+        """Reply to an existing note"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            parent_note = self.annotation_manager.get_annotation_by_id(parent_note_id)
+            if not parent_note:
+                return
+            
+            from annotations.ui.note_ui import NoteDialog
+            
+            categories = self.annotation_manager.get_categories()
+            dialog = NoteDialog(categories=categories, position=parent_note.position, parent=self)
+            dialog.setWindowTitle("Reply to Note")
+            
+            if dialog.exec_() == dialog.Accepted:
+                data = dialog.get_note_data()
+                
+                reply_note = self.annotation_manager.note_manager.create_reply(
+                    parent_note_id=parent_note_id,
+                    content=data['content'],
+                    plain_text=data['plain_text'],
+                    category=data['category']
+                )
+                
+                if reply_note:
+                    self.update_note_display()
+                    if hasattr(self, 'note_panel') and self.note_panel:
+                        self.note_panel.refresh()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Added reply to note: {parent_note_id}")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to reply to note: {e}")
+    
+    def navigate_to_note(self, document_path: str, page_number: int):
+        """Navigate to a note's page"""
+        try:
+            if document_path != self.current_document.file_path:
+                # Load different document
+                self.load_document(document_path)
+            
+            # Navigate to page
+            if self.document_viewer and hasattr(self.document_viewer, 'go_to_page'):
+                self.document_viewer.go_to_page(page_number)
+                self.update_page_info_display()
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to navigate to note: {e}")
+    
+    def update_note_display(self):
+        """Update note display in document viewer"""
+        if not self.annotation_manager or not self.current_document:
+            return
+        
+        try:
+            current_page = self.get_current_page()
+            if current_page is None:
+                return
+            
+            # Get notes for current page
+            notes = self.annotation_manager.get_notes(
+                self.current_document.file_path, current_page
+            )
+            
+            # Update note renderer if available
+            if hasattr(self, 'note_renderer') and self.note_renderer:
+                self.note_renderer.set_notes(notes)
+            
+            # Update note placement manager if available
+            if hasattr(self, 'note_placement_manager') and self.note_placement_manager:
+                self.note_placement_manager.update_note_display(notes)
+            
+            # Update note panel if available
+            if hasattr(self, 'note_panel') and self.note_panel:
+                self.note_panel.refresh()
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to update note display: {e}")
+    
+    def create_note_panel(self):
+        """Create note management panel"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from annotations.ui.note_ui import NotePanel
+            
+            self.note_panel = NotePanel(self.annotation_manager.note_manager)
+            self.note_panel.setFixedWidth(350)
+            self.note_panel.setVisible(False)  # Initially hidden
+            
+            # Connect signals
+            self.note_panel.note_selected.connect(self.navigate_to_note)
+            self.note_panel.note_edited.connect(self.edit_note)
+            self.note_panel.note_deleted.connect(self.delete_note)
+            self.note_panel.note_replied.connect(self.reply_to_note)
+            
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.info("Note panel created")
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to create note panel: {e}")
+    
+    def toggle_note_panel(self):
+        """Toggle note panel visibility"""
+        if not hasattr(self, 'note_panel'):
+            self.create_note_panel()
+        
+        if self.note_panel:
+            visible = not self.note_panel.isVisible()
+            self.note_panel.setVisible(visible)
+            
+            if self.annotation_toolbar:
+                self.annotation_toolbar.set_panel_visibility("notes", visible)
+    
+    def init_highlight_mode_manager(self):
+        """Initialize highlight mode manager"""
+        try:
+            from annotations.ui.text_selection import HighlightModeManager
+            self.highlight_mode_manager = HighlightModeManager(self)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to initialize highlight mode manager: {e}")
+            self.highlight_mode_manager = None
+    
+    def update_highlight_display(self):
+        """Update highlight display in document viewer"""
+        if not self.annotation_manager or not self.current_document:
+            return
+        
+        try:
+            current_page = self.get_current_page()
+            if current_page is None:
+                return
+            
+            # Get highlights for current page
+            highlights = self.annotation_manager.get_highlights(
+                self.current_document.file_path, current_page
+            )
+            
+            # Update highlight renderer if available
+            if hasattr(self, 'highlight_renderer') and self.highlight_renderer:
+                self.highlight_renderer.set_highlights(highlights)
+            
+            # Update highlight panel if available
+            if hasattr(self, 'highlight_panel') and self.highlight_panel:
+                self.highlight_panel.refresh()
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to update highlight display: {e}")
+    
+    def create_highlight_panel(self):
+        """Create highlight management panel"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from annotations.ui.highlight_ui import HighlightPanel
+            
+            self.highlight_panel = HighlightPanel(self.annotation_manager.highlight_manager)
+            self.highlight_panel.setFixedWidth(300)
+            self.highlight_panel.setVisible(False)  # Initially hidden
+            
+            # Connect signals
+            self.highlight_panel.highlight_selected.connect(self.navigate_to_highlight)
+            self.highlight_panel.highlight_edited.connect(self.edit_highlight)
+            self.highlight_panel.highlight_deleted.connect(self.delete_highlight)
+            
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.info("Highlight panel created")
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to create highlight panel: {e}")
+    
+    def navigate_to_highlight(self, document_path: str, page_number: int):
+        """Navigate to a highlighted page"""
+        try:
+            if document_path != self.current_document.file_path:
+                # Load different document
+                self.load_document(document_path)
+            
+            # Navigate to page
+            if self.document_viewer and hasattr(self.document_viewer, 'go_to_page'):
+                self.document_viewer.go_to_page(page_number)
+                self.update_page_info_display()
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to navigate to highlight: {e}")
+    
+    def edit_highlight(self, highlight_id: str):
+        """Edit an existing highlight"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            highlight = self.annotation_manager.get_annotation_by_id(highlight_id)
+            if not highlight:
+                return
+            
+            from annotations.ui.highlight_ui import HighlightDialog
+            
+            categories = self.annotation_manager.get_categories()
+            dialog = HighlightDialog(highlight=highlight, categories=categories, parent=self)
+            
+            if dialog.exec_() == dialog.Accepted:
+                success = self.annotation_manager.update_highlight(highlight)
+                if success:
+                    self.update_highlight_display()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Updated highlight: {highlight.id}")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to edit highlight: {e}")
+    
+    def delete_highlight(self, highlight_id: str):
+        """Delete a highlight with confirmation"""
+        if not self.annotation_manager:
+            return
+        
+        try:
+            from PyQt5.QtWidgets import QMessageBox
+            
+            highlight = self.annotation_manager.get_annotation_by_id(highlight_id)
+            if not highlight:
+                return
+            
+            reply = QMessageBox.question(
+                self, "Delete Highlight",
+                f"Are you sure you want to delete this highlight?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            
+            if reply == QMessageBox.Yes:
+                success = self.annotation_manager.delete_highlight(highlight_id)
+                if success:
+                    self.update_highlight_display()
+                    
+                    import logging
+                    logger = logging.getLogger("ebook_reader")
+                    logger.info(f"Deleted highlight: {highlight_id}")
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ebook_reader")
+            logger.error(f"Failed to delete highlight: {e}")
     
     def init_document_annotations(self, file_path: str):
         """Initialize annotations for the loaded document"""
@@ -1012,6 +1531,28 @@ class MainWindow(QMainWindow):
             
             # Update bookmark indicators
             self.update_bookmark_indicators()
+            
+            # Update highlight display
+            self.update_highlight_display()
+            
+            # Create highlight panel if not exists
+            if not hasattr(self, 'highlight_panel'):
+                self.create_highlight_panel()
+            
+            # Set document in highlight panel
+            if hasattr(self, 'highlight_panel') and self.highlight_panel:
+                self.highlight_panel.set_document(file_path)
+            
+            # Create note panel if not exists
+            if not hasattr(self, 'note_panel'):
+                self.create_note_panel()
+            
+            # Set document in note panel
+            if hasattr(self, 'note_panel') and self.note_panel:
+                self.note_panel.set_document(file_path)
+            
+            # Update note display
+            self.update_note_display()
             
             import logging
             logger = logging.getLogger("ebook_reader")
@@ -1182,11 +1723,13 @@ class MainWindow(QMainWindow):
         """Navigate to previous page."""
         if self.document_viewer and self.document_viewer.previous_page():
             self.update_page_info_display()
+            self.update_note_display()
 
     def next_page(self):
         """Navigate to next page."""
         if self.document_viewer and self.document_viewer.next_page():
             self.update_page_info_display()
+            self.update_note_display()
 
     def update_page_info_display(self):
         """Update page info display after navigation."""
