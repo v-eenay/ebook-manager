@@ -29,7 +29,7 @@ class CategoryManager:
     # Category CRUD Operations
     def create_category(self, name: str, color: str = "#808080", 
                        description: str = "", parent_id: Optional[str] = None,
-                       sort_order: int = 0) -> Optional[AnnotationCategory]:
+                       sort_order: int = 0, is_active: bool = True) -> Optional[AnnotationCategory]:
         """Create a new category"""
         try:
             # Validate name uniqueness within parent
@@ -43,7 +43,8 @@ class CategoryManager:
                 color=color,
                 description=description.strip(),
                 parent_id=parent_id,
-                sort_order=sort_order
+                sort_order=sort_order,
+                is_active=is_active
             )
             
             # Validate hierarchy
