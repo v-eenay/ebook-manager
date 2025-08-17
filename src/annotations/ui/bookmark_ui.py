@@ -126,12 +126,22 @@ class BookmarkDialog(QDialog):
         self.description_input.setMaximumHeight(80)
         form_layout.addRow("Description:", self.description_input)
         
-        # Category selection
+        # Category selection - Enhanced with category manager integration
+        category_layout = QHBoxLayout()
+        
         self.category_combo = ComboBox()
         self.category_combo.addItem("Default", "default")
         for category in self.categories:
             self.category_combo.addItem(category.name, category.id)
-        form_layout.addRow("Category:", self.category_combo)
+        category_layout.addWidget(self.category_combo)
+        
+        # Manage categories button
+        self.manage_categories_btn = QPushButton("Manage...")
+        self.manage_categories_btn.setMaximumWidth(80)
+        self.manage_categories_btn.clicked.connect(self.manage_categories)
+        category_layout.addWidget(self.manage_categories_btn)
+        
+        form_layout.addRow("Category:", category_layout)
         
         layout.addWidget(form_widget)
         
@@ -198,6 +208,20 @@ class BookmarkDialog(QDialog):
         
         self.bookmark_saved.emit(self.bookmark)
         super().accept()
+    
+    def manage_categories(self):
+        """Open category management dialog"""
+        try:
+            # This will be connected to the main window's category management
+            # For now, show a placeholder message
+            QMessageBox.information(
+                self, "Category Management",
+                "Category management will open the main category dialog.\n\n"
+                "This feature requires integration with the main window."
+            )
+        except Exception as e:
+            logger.error(f"Failed to open category management: {e}")
+            QMessageBox.warning(self, "Error", "Failed to open category management.")
 
 class BookmarkListItem(QWidget):
     """Custom list item for bookmarks"""

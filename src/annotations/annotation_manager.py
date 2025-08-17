@@ -16,6 +16,7 @@ from .annotation_storage import AnnotationStorage
 from .bookmark_manager import BookmarkManager
 from .highlight_manager import HighlightManager
 from .note_manager import NoteManager
+from .category_manager import CategoryManager
 
 logger = logging.getLogger("ebook_reader")
 
@@ -30,6 +31,10 @@ class AnnotationManager:
         self.bookmark_manager = BookmarkManager(self.storage)
         self.highlight_manager = HighlightManager(self.storage)
         self.note_manager = NoteManager(self.storage)
+        self.category_manager = CategoryManager(self.storage)
+        
+        # Initialize default categories
+        self.category_manager.initialize_default_categories()
         
         logger.info("Annotation manager initialized")
     
@@ -282,3 +287,73 @@ class AnnotationManager:
         # Implementation depends on how document paths are managed
         # For now, return 0 as placeholder
         return 0
+    
+    # Category Management Methods
+    def create_category(self, name: str, color: str = "#808080", 
+                       description: str = "", parent_id: Optional[str] = None,
+                       sort_order: int = 0) -> Optional[AnnotationCategory]:
+        """Create a new annotation category"""
+        return self.category_manager.create_category(name, color, description, parent_id, sort_order)
+    
+    def update_category(self, category_id: str, **kwargs) -> bool:
+        """Update an existing category"""
+        return self.category_manager.update_category(category_id, **kwargs)
+    
+    def delete_category(self, category_id: str, reassign_to: Optional[str] = None) -> bool:
+        """Delete a category with optional reassignment"""
+        return self.category_manager.delete_category(category_id, reassign_to)
+    
+    def get_categories(self, include_inactive: bool = False) -> List[AnnotationCategory]:
+        """Get all annotation categories"""
+        return self.category_manager.get_categories(include_inactive)
+    
+    def get_category_by_id(self, category_id: str) -> Optional[AnnotationCategory]:
+        """Get a specific category by ID"""
+        return self.category_manager.get_category_by_id(category_id)
+    
+    def get_category_hierarchy(self) -> Dict[str, List[AnnotationCategory]]:
+        """Get category hierarchy"""
+        return self.category_manager.get_category_hierarchy()
+    
+    def get_root_categories(self) -> List[AnnotationCategory]:
+        """Get top-level categories"""
+        return self.category_manager.get_root_categories()
+    
+    def get_child_categories(self, parent_id: str) -> List[AnnotationCategory]:
+        """Get child categories of a parent"""
+        return self.category_manager.get_child_categories(parent_id)
+    
+    def assign_category_to_annotation(self, annotation_id: str, category_id: str, 
+                                     assigned_by: str = "system") -> bool:
+        """Assign a category to an annotation"""
+        return self.category_manager.assign_category(annotation_id, category_id, assigned_by)
+    
+    def remove_category_from_annotation(self, annotation_id: str, category_id: str) -> bool:
+        """Remove a category from an annotation"""
+        return self.category_manager.remove_category_assignment(annotation_id, category_id)
+    
+    def get_annotation_categories(self, annotation_id: str) -> List[AnnotationCategory]:
+        """Get all categories assigned to an annotation"""
+        return self.category_manager.get_annotation_categories(annotation_id)
+    
+    def bulk_assign_categories(self, annotation_ids: List[str], category_ids: List[str],
+                              assigned_by: str = "system"):
+        """Assign multiple categories to multiple annotations"""
+        return self.category_manager.bulk_assign_categories(annotation_ids, category_ids, assigned_by)
+    
+    def apply_category_template(self, template_name: str) -> bool:
+        """Apply a category template"""
+        return self.category_manager.apply_category_template(template_name)
+    
+    def get_available_category_templates(self) -> Dict[str, List[Dict[str, str]]]:
+        """Get available category templates"""
+        return self.category_manager.get_available_templates()
+    
+    def get_category_statistics(self) -> Dict[str, Any]:
+        """Get category usage statistics"""
+        return self.category_manager.get_category_statistics()
+    
+    def validate_category_name(self, name: str, parent_id: Optional[str] = None,
+                              exclude_id: Optional[str] = None) -> bool:
+        """Validate category name for uniqueness"""
+        return self.category_manager.validate_category_name(name, parent_id, exclude_id)
